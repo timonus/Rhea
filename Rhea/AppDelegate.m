@@ -20,7 +20,9 @@ static NSString *const kRHEADropboxRedirectURLString = @"";
 
 static NSString *const kRHEADropboxTokenKey = @"dropboxToken";
 
-@interface AppDelegate () <NSWindowDelegate>
+static NSString *const kRHEANotificationURLStringKey = @"url";
+
+@interface AppDelegate () <NSWindowDelegate, NSUserNotificationCenterDelegate>
 
 @property (weak) IBOutlet NSWindow *window;
 @property (nonatomic, strong) NSStatusItem *statusItem;
@@ -45,6 +47,9 @@ static NSString *const kRHEADropboxTokenKey = @"dropboxToken";
     self.statusItem.button.window.delegate = self;
     
     [self updateMenu];
+    
+    // Notifications
+    [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
@@ -98,6 +103,15 @@ static NSString *const kRHEADropboxTokenKey = @"dropboxToken";
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/recents"]];
 }
 
+#pragma mark - Notifications
+
+- (void)userNotificationCenter:(NSUserNotificationCenter *)center didActivateNotification:(NSUserNotification *)notification
+{
+    if (notification.activationType == NSUserNotificationActivationTypeContentsClicked || notification.activationType == NSUserNotificationActivationTypeActionButtonClicked) {
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:notification.userInfo[kRHEANotificationURLStringKey]]];
+    }
+}
+
 #pragma mark - Drag & Drop
 
 - (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
@@ -139,6 +153,21 @@ static NSString *const kRHEADropboxTokenKey = @"dropboxToken";
                 if (urlString) {
                     [[NSPasteboard generalPasteboard] clearContents];
                     [[NSPasteboard generalPasteboard] writeObjects:@[urlString]];
+                    
+                    NSUserNotification *const notification = [[NSUserNotification alloc] init];
+                    notification.title = @"File uploaded";
+                    notification.subtitle = [NSString stringWithFormat:@"%@\n%@", filename, urlString];
+                    
+                    if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
+                        notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+                    }
+                    
+                    notification.hasActionButton = YES;
+                    notification.actionButtonTitle = @"View";
+                    
+                    notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
+                    
+                    [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 } else {
                     NSAlert *const alert = [[NSAlert alloc] init];
                     alert.messageText = @"Couldn't copy link";
