@@ -1,0 +1,3 @@
+[submodule "Vendor/TJDropbox"]
+	path = Vendor/TJDropbox
+	url = git@github.com:timonus/TJDropbox.git
