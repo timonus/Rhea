@@ -11,6 +11,7 @@
 		222802BD1D52D1C90059CEF7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802BC1D52D1C90059CEF7 /* main.m */; };
 		222802BF1D52D1C90059CEF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 222802BE1D52D1C90059CEF7 /* Assets.xcassets */; };
 		222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 222802C01D52D1C90059CEF7 /* MainMenu.xib */; };
+		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +22,8 @@
 		222802BE1D52D1C90059CEF7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		222802C11D52D1C90059CEF7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		222802C31D52D1C90059CEF7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		222802CA1D52D9550059CEF7 /* TJDropbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TJDropbox.h; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.h; sourceTree = "<group>"; };
+		222802CB1D52D9550059CEF7 /* TJDropbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TJDropbox.m; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -55,6 +58,7 @@
 			children = (
 				222802B81D52D1C90059CEF7 /* AppDelegate.h */,
 				222802B91D52D1C90059CEF7 /* AppDelegate.m */,
+				222802C91D52D9460059CEF7 /* Vendor */,
 				222802BE1D52D1C90059CEF7 /* Assets.xcassets */,
 				222802C01D52D1C90059CEF7 /* MainMenu.xib */,
 				222802C31D52D1C90059CEF7 /* Info.plist */,
@@ -69,6 +73,23 @@
 				222802BC1D52D1C90059CEF7 /* main.m */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		222802C91D52D9460059CEF7 /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				222802CD1D52D9590059CEF7 /* TJDropbox */,
+			);
+			name = Vendor;
+			sourceTree = "<group>";
+		};
+		222802CD1D52D9590059CEF7 /* TJDropbox */ = {
+			isa = PBXGroup;
+			children = (
+				222802CA1D52D9550059CEF7 /* TJDropbox.h */,
+				222802CB1D52D9550059CEF7 /* TJDropbox.m */,
+			);
+			name = TJDropbox;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,6 +161,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
 				222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */,
 			);
