@@ -197,7 +197,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     
     // Begin uploading the file
     [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
-        NSLog(@"%f", progress);
+        // TODO: Show progress.
     } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         if (error) {
             dispatch_async(dispatch_get_main_queue(), ^{
