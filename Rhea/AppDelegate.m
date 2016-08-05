@@ -17,6 +17,8 @@
 
 #import <CommonCrypto/CommonDigest.h>
 
+#import "NSString+Encryption.h"
+
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
 // Handling incoming URLs: http://fredandrandall.com/blog/2011/07/30/how-to-launch-your-macios-app-with-a-custom-url/
@@ -763,20 +765,17 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 + (NSString *)_dropboxAppKey
 {
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
+    return [@"+yfqZhN0d+z1e2Iu6+RwOQ==" decryptedStringWithKey:NSStringFromClass([self class])];
 }
 
 + (NSString *)_bitlyClientIdentifier
 {
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
+    return [@"pGZ6IM69ixJIttw364hP59p95Htiyglkm7eScq93U9WGcEj9IuCWhgwKHt6P/Xoh" decryptedStringWithKey:NSStringFromClass([self class])];
 }
 
 + (NSString *)_bitlyClientSecret
 {
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
+    return [@"XHcyH4B9HQ4nV0IRAZNNq0htLZbp4JBvs03PafrlzQVbyvSDag0z5Dha26G9wjMR" decryptedStringWithKey:NSStringFromClass([self class])];
 }
 
 @end

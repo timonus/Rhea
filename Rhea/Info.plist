@@ -38,6 +38,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>rhea-bitly-auth</string>
+				<string>db-qdisbmnjkr4c0a9</string>
 			</array>
 		</dict>
 	</array>
