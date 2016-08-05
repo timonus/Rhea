@@ -216,7 +216,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 [self copyStringToPasteboard:urlString];
                 
                 NSUserNotification *const notification = [[NSUserNotification alloc] init];
-                notification.title = @"File uploaded";
+                notification.title = @"Copied file link";
                 notification.subtitle = filename;
                 notification.informativeText = urlString;
                 if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
