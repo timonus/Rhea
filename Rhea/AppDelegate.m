@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 
+#import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
@@ -43,7 +44,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     self.statusItem.button.image = [NSImage imageNamed:@"StatusBarButtonImage"];
     self.statusItem.button.action = @selector(statusItemClicked:);
     
-    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType]];
+    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType]];
     self.statusItem.button.window.delegate = self;
     
     [self updateMenu];
@@ -124,65 +125,58 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     // http://stackoverflow.com/a/423702/3943258
     
     NSArray *const paths = [[sender draggingPasteboard] propertyListForType:NSFilenamesPboardType];
+    NSArray *const urls = [[sender draggingPasteboard] propertyListForType:NSURLPboardType];
     
-    if (paths.count == 1) {
-        NSString *const path = [paths firstObject];
-        
-        NSURL *const fileURL = [NSURL fileURLWithPath:path];
-        NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
-        NSString *const extension = [fileURL pathExtension];
-        NSString *const suffix = [self randomSuffix];
-        NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
-        NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
-        
-        // Begin uploading the file
-        [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-            if (error) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    NSAlert *const alert = [[NSAlert alloc] init];
-                    alert.messageText = @"Couldn't upload file";
-                    alert.informativeText = path;
-                    [alert runModal];
-                });
+    NSString *pathToUpload = nil;
+    NSURL *urlToShorten = nil;
+    
+    if (paths.count > 0) {
+        if (paths.count == 1) {
+            NSString *const path = [paths firstObject];
+            NSString *const extension = [[NSURL fileURLWithPath:path] pathExtension];
+            if ([extension isEqualToString:@"webloc"]) {
+                NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:[NSData dataWithContentsOfFile:path] options:0 format:nil error:nil];
+                NSURL *const url = [NSURL URLWithString:plist[@"URL"]];
+                
+                // TODO: What if it's a file URL.
+                urlToShorten = url;
+            } else {
+                pathToUpload = path;
             }
-        }];
-        
-        // Copy a short link
-        [TJDropbox getShortSharedLinkForFileAtPath:remotePath accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (urlString) {
-                    [[NSPasteboard generalPasteboard] clearContents];
-                    [[NSPasteboard generalPasteboard] writeObjects:@[urlString]];
-                    
-                    NSUserNotification *const notification = [[NSUserNotification alloc] init];
-                    notification.title = @"File uploaded";
-                    notification.subtitle = [NSString stringWithFormat:@"%@\n%@", filename, urlString];
-                    
-                    if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                        notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
-                    }
-                    
-                    notification.hasActionButton = YES;
-                    notification.actionButtonTitle = @"View";
-                    
-                    notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
-                    
-                    [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                } else {
-                    NSAlert *const alert = [[NSAlert alloc] init];
-                    alert.messageText = @"Couldn't copy link";
-                    alert.informativeText = path;
-                    [alert runModal];
-                }
-            });
-        }];
-    } else {
-        NSAlert *const alert = [[NSAlert alloc] init];
-        alert.messageText = @"Multiple files aren't supported at this time.";
-        [alert runModal];
+        } else {
+            NSAlert *const alert = [[NSAlert alloc] init];
+            alert.messageText = @"Multiple files aren't supported at this time.";
+            [alert runModal];
+        }
+    } else if (urls.count > 0) {
+        const id object = [urls firstObject];
+        NSURL *url = nil;
+        if ([object isKindOfClass:[NSURL class]]) {
+            url = object;
+        } else if ([object isKindOfClass:[NSString class]]) {
+            url = [NSURL URLWithString:object];
+        }
+        if ([url.scheme caseInsensitiveCompare:@"file"] == NSOrderedSame) {
+            pathToUpload = [url path];
+        } else if ([url.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame || [url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
+            urlToShorten = url;
+        } else {
+            NSAlert *const alert = [[NSAlert alloc] init];
+            alert.messageText = @"Invalid URL.";
+            [alert runModal];
+        }
     }
     
-    return YES;
+    BOOL didHandle = NO;
+    if (pathToUpload) {
+        [self uploadFileAtPath:pathToUpload];
+        didHandle = YES;
+    } else if (urlToShorten) {
+        [self shortenURL:urlToShorten];
+        didHandle = YES;
+    }
+    
+    return didHandle;
 }
 
 #pragma mark - Dropbox
@@ -190,6 +184,87 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 - (NSString *)dropboxToken
 {
     return [[NSUserDefaults standardUserDefaults] stringForKey:kRHEADropboxTokenKey];
+}
+
+- (void)uploadFileAtPath:(NSString *const)path
+{
+    NSURL *const fileURL = [NSURL fileURLWithPath:path];
+    NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
+    NSString *const extension = [fileURL pathExtension];
+    NSString *const suffix = [self randomSuffix];
+    NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
+    NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
+    
+    // Begin uploading the file
+    [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        NSLog(@"%f", progress);
+    } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+        if (error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = @"Couldn't upload file";
+                alert.informativeText = path;
+                [alert runModal];
+            });
+        }
+    }];
+    
+    // Copy a short link
+    [TJDropbox getShortSharedLinkForFileAtPath:remotePath accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (urlString) {
+                [self copyStringToPasteboard:urlString];
+                
+                NSUserNotification *const notification = [[NSUserNotification alloc] init];
+                notification.title = @"File uploaded";
+                notification.subtitle = filename;
+                notification.informativeText = urlString;
+                if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
+                    notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+                }
+                notification.hasActionButton = YES;
+                notification.actionButtonTitle = @"View";
+                notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
+                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+                });
+            } else {
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = @"Couldn't copy link";
+                alert.informativeText = path;
+                [alert runModal];
+            }
+        });
+    }];
+}
+
+#pragma mark - Link Shortening
+
+- (void)shortenURL:(NSURL *const)url
+{
+    [RHEAGoogleClient shortenURL:url completion:^(NSURL * _Nonnull shortenedURL) {
+        if (shortenedURL) {
+            [self copyStringToPasteboard:shortenedURL.absoluteString];
+            
+            NSUserNotification *const notification = [[NSUserNotification alloc] init];
+            notification.title = @"Link shortened";
+            notification.subtitle = url.absoluteString;
+            notification.informativeText = shortenedURL.absoluteString;
+            notification.hasActionButton = YES;
+            notification.actionButtonTitle = @"View";
+            notification.userInfo = @{kRHEANotificationURLStringKey: shortenedURL.absoluteString};
+            [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+            });
+        } else {
+            NSAlert *const alert = [[NSAlert alloc] init];
+            alert.messageText = @"Couldn't shorten link";
+            alert.informativeText = url.absoluteString;
+            [alert runModal];
+        }
+    }];
 }
 
 #pragma mark - Utilities
@@ -203,6 +278,12 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         [randomSuffix appendFormat:@"%c", [kCharacterSet characterAtIndex:arc4random_uniform((u_int32_t)kCharacterSet.length)]];
     }
     return randomSuffix;
+}
+
+- (void)copyStringToPasteboard:(NSString *const)string
+{
+    [[NSPasteboard generalPasteboard] clearContents];
+    [[NSPasteboard generalPasteboard] writeObjects:@[string]];
 }
 
 @end
