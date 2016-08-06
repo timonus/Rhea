@@ -13,6 +13,7 @@
 		222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 222802C01D52D1C90059CEF7 /* MainMenu.xib */; };
 		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
 		22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */; };
+		227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */ = {isa = PBXBuildFile; fileRef = 227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,6 +28,8 @@
 		222802CB1D52D9550059CEF7 /* TJDropbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TJDropbox.m; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.m; sourceTree = "<group>"; };
 		22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAGoogleClient.h; sourceTree = "<group>"; };
 		22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAGoogleClient.m; sourceTree = "<group>"; };
+		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
+		227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAEntityResolver.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,6 +66,8 @@
 				222802B91D52D1C90059CEF7 /* AppDelegate.m */,
 				22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */,
 				22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */,
+				227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */,
+				227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */,
 				222802C91D52D9460059CEF7 /* Vendor */,
 				222802BE1D52D1C90059CEF7 /* Assets.xcassets */,
 				222802C01D52D1C90059CEF7 /* MainMenu.xib */,
@@ -167,6 +172,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */,
+				227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */,
 				22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
 				222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */,

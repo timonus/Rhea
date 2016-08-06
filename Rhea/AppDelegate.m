@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 
+#import "RHEAEntityResolver.h"
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 
@@ -127,22 +128,11 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     NSArray *const paths = [[sender draggingPasteboard] propertyListForType:NSFilenamesPboardType];
     NSArray *const urls = [[sender draggingPasteboard] propertyListForType:NSURLPboardType];
     
-    NSString *pathToUpload = nil;
-    NSURL *urlToShorten = nil;
+    id resolvedEntity = nil;
     
     if (paths.count > 0) {
         if (paths.count == 1) {
-            NSString *const path = [paths firstObject];
-            NSString *const extension = [[NSURL fileURLWithPath:path] pathExtension];
-            if ([extension isEqualToString:@"webloc"]) {
-                NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:[NSData dataWithContentsOfFile:path] options:0 format:nil error:nil];
-                NSURL *const url = [NSURL URLWithString:plist[@"URL"]];
-                
-                // TODO: What if it's a file URL.
-                urlToShorten = url;
-            } else {
-                pathToUpload = path;
-            }
+            resolvedEntity = [RHEAEntityResolver resolveEntity:[paths firstObject]];
         } else {
             NSAlert *const alert = [[NSAlert alloc] init];
             alert.messageText = @"Multiple files aren't supported at this time.";
@@ -156,23 +146,15 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         } else if ([object isKindOfClass:[NSString class]]) {
             url = [NSURL URLWithString:object];
         }
-        if ([url.scheme caseInsensitiveCompare:@"file"] == NSOrderedSame) {
-            pathToUpload = [url path];
-        } else if ([url.scheme caseInsensitiveCompare:@"http"] == NSOrderedSame || [url.scheme caseInsensitiveCompare:@"https"] == NSOrderedSame) {
-            urlToShorten = url;
-        } else {
-            NSAlert *const alert = [[NSAlert alloc] init];
-            alert.messageText = @"Invalid URL.";
-            [alert runModal];
-        }
+        resolvedEntity = [RHEAEntityResolver resolveEntity:url];
     }
     
     BOOL didHandle = NO;
-    if (pathToUpload) {
-        [self uploadFileAtPath:pathToUpload];
+    if ([resolvedEntity isKindOfClass:[NSString class]]) {
+        [self uploadFileAtPath:resolvedEntity];
         didHandle = YES;
-    } else if (urlToShorten) {
-        [self shortenURL:urlToShorten];
+    } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        [self shortenURL:resolvedEntity];
         didHandle = YES;
     }
     
