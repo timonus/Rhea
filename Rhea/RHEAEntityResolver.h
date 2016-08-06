@@ -12,7 +12,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface RHEAEntityResolver : NSObject
 
-+ (id)resolveEntity:(const id)entity;
++ (nullable id)resolveEntity:(const id)entity;
 
 @end
 

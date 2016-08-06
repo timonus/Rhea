@@ -146,7 +146,9 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         } else if ([object isKindOfClass:[NSString class]]) {
             url = [NSURL URLWithString:object];
         }
-        resolvedEntity = [RHEAEntityResolver resolveEntity:url];
+        if (url) {
+            resolvedEntity = [RHEAEntityResolver resolveEntity:url];
+        }
     }
     
     BOOL didHandle = NO;
