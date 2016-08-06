@@ -208,7 +208,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 notification.actionButtonTitle = @"View";
                 notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
             } else {
@@ -237,7 +237,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             notification.actionButtonTitle = @"View";
             notification.userInfo = @{kRHEANotificationURLStringKey: shortenedURL.absoluteString};
             [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(4.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
             });
         } else {
