@@ -16,6 +16,8 @@
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
 // Handling incoming URLs: http://fredandrandall.com/blog/2011/07/30/how-to-launch-your-macios-app-with-a-custom-url/
 // Drag drop into status bar: http://stackoverflow.com/a/26810727/3943258
+// Key presses: http://stackoverflow.com/questions/9268045/how-can-i-detect-that-the-shift-key-has-been-pressed
+// Key event monitoring: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 
 static NSString *const kRHEADropboxAppKey = @"";
 static NSString *const kRHEADropboxRedirectURLString = @"";
@@ -116,19 +118,14 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 #pragma mark - Drag & Drop
 
-- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
-{
-    return NSDragOperationCopy;
-}
-
-- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
+- (id)resolveDraggingInfo:(id<NSDraggingInfo>)sender
 {
     // http://stackoverflow.com/a/423702/3943258
     
+    id resolvedEntity = nil;
+    
     NSArray *const paths = [[sender draggingPasteboard] propertyListForType:NSFilenamesPboardType];
     NSArray *const urls = [[sender draggingPasteboard] propertyListForType:NSURLPboardType];
-    
-    id resolvedEntity = nil;
     
     if (paths.count > 0) {
         if (paths.count == 1) {
@@ -151,14 +148,45 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         }
     }
     
+    return resolvedEntity;
+}
+
+- (NSDragOperation)draggingEntered:(id<NSDraggingInfo>)sender
+{
+    id resolvedEntity = [self resolveDraggingInfo:sender];
+    
+    NSDragOperation operation = NSDragOperationNone;
+    
+    if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        NSEvent *event = [[sender draggingDestinationWindow] currentEvent];
+        if (([event modifierFlags] & NSAlternateKeyMask) != 0) {
+            operation = NSDragOperationCopy;
+        } else {
+            operation = NSDragOperationLink;
+        }
+    } else if ([resolvedEntity isKindOfClass:[NSString class]]) {
+        operation = NSDragOperationCopy;
+    }
+    
+    return operation;
+}
+
+- (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender
+{
+    return [self draggingEntered:sender];
+}
+
+- (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
+{
+    id resolvedEntity = [self resolveDraggingInfo:sender];
+    
     BOOL didHandle = NO;
     
-    // 1. See if this is a remote URL we'd like to copy
-    if ([resolvedEntity isKindOfClass:[NSURL class]]) {
-        if ([[[self class] URLExtensionsToCopyInsteadOfShorten] containsObject:[[(NSURL *)resolvedEntity pathExtension] lowercaseString]]) {
-            [self saveFileAtURL:resolvedEntity];
-            didHandle = YES;
-        }
+    // 1. See if this is a remote URL we'd like to copy (control key)
+    NSEvent *event = [[sender draggingDestinationWindow] currentEvent];
+    if ([resolvedEntity isKindOfClass:[NSURL class]] && ([event modifierFlags] & NSAlternateKeyMask)) {
+        [self saveFileAtURL:resolvedEntity];
+        didHandle = YES;
     }
     
     // 2. Upload local file or shorten link
@@ -173,16 +201,6 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }
     
     return didHandle;
-}
-
-+ (NSSet *)URLExtensionsToCopyInsteadOfShorten
-{
-    static NSSet *extensions = nil;
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        extensions = [NSSet setWithObjects:@"png", @"jpeg", @"jpg", @"gif", nil];
-    });
-    return extensions;
 }
 
 #pragma mark - Dropbox
