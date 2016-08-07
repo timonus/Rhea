@@ -152,15 +152,37 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }
     
     BOOL didHandle = NO;
-    if ([resolvedEntity isKindOfClass:[NSString class]]) {
-        [self uploadFileAtPath:resolvedEntity];
-        didHandle = YES;
-    } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
-        [self shortenURL:resolvedEntity];
-        didHandle = YES;
+    
+    // 1. See if this is a remote URL we'd like to copy
+    if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        if ([[[self class] URLExtensionsToCopyInsteadOfShorten] containsObject:[[(NSURL *)resolvedEntity pathExtension] lowercaseString]]) {
+            [self saveFileAtURL:resolvedEntity];
+            didHandle = YES;
+        }
+    }
+    
+    // 2. Upload local file or shorten link
+    if (!didHandle) {
+        if ([resolvedEntity isKindOfClass:[NSString class]]) {
+            [self uploadFileAtPath:resolvedEntity];
+            didHandle = YES;
+        } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+            [self shortenURL:resolvedEntity];
+            didHandle = YES;
+        }
     }
     
     return didHandle;
+}
+
++ (NSSet *)URLExtensionsToCopyInsteadOfShorten
+{
+    static NSSet *extensions = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        extensions = [NSSet setWithObjects:@"png", @"jpeg", @"jpg", @"gif", nil];
+    });
+    return extensions;
 }
 
 #pragma mark - Dropbox
@@ -217,6 +239,54 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
                 alert.informativeText = path;
+                [alert runModal];
+            }
+        });
+    }];
+}
+
+- (void)saveFileAtURL:(NSURL *const)url
+{
+    NSString *const filename = [[url URLByDeletingPathExtension] lastPathComponent];
+    NSString *const extension = [url pathExtension];
+    NSString *const suffix = [self randomSuffix];
+    NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
+    NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
+    
+    // Copy the file
+    [TJDropbox saveContentsOfURL:url toPath:remotePath accessToken:[self dropboxToken] completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+        if (error) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = @"Couldn't copy file to Dropbox";
+                alert.informativeText = url.absoluteString;
+                [alert runModal];
+            });
+        }
+    }];
+    
+    // Copy a short link
+    [TJDropbox getShortSharedLinkForFileAtPath:remotePath accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (urlString) {
+                [self copyStringToPasteboard:urlString];
+                
+                NSUserNotification *const notification = [[NSUserNotification alloc] init];
+                notification.title = @"Copied file link";
+                notification.subtitle = filename;
+                notification.informativeText = urlString;
+                
+                notification.hasActionButton = YES;
+                notification.actionButtonTitle = @"View";
+                notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
+                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                    [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+                });
+            } else {
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = @"Couldn't copy link";
+                alert.informativeText = url.absoluteString;
                 [alert runModal];
             }
         });
