@@ -234,7 +234,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }];
     
     // Copy a short link
-    [TJDropbox getShortSharedLinkForFileAtPath:remotePath accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeShort uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
@@ -284,7 +284,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }];
     
     // Copy a short link
-    [TJDropbox getShortSharedLinkForFileAtPath:remotePath accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeShort uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
