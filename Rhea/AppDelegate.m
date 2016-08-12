@@ -24,6 +24,7 @@ static NSString *const kRHEADropboxAppKey = @"";
 static NSString *const kRHEADropboxRedirectURLString = @"";
 
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
+static NSString *const kRHEACurrentDropboxuAccountKey = @"currentDropboxAccount";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -101,6 +102,19 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
             [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
         }
+        
+        [menu addItem:[NSMenuItem separatorItem]];
+        
+        for (NSDictionary *const account in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
+            NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
+            NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
+            if ([email isEqualToString:[self currentDropboxAccount]]) {
+                menuItem.state = NSOnState;
+            }
+            [menu addItem:menuItem];
+        }
+        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
+        [menu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
     } else {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Log in to Dropbox" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
     }
@@ -111,6 +125,16 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 - (void)authenticateMenuItemClicked:(id)sender
 {
     [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:kRHEADropboxAppKey redirectURL:[NSURL URLWithString:kRHEADropboxRedirectURLString]]];
+}
+
+- (void)accountMenuItemSelected:(id)sender
+{
+    [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxuAccountKey];
+}
+
+- (void)signOutCurrentDropboxAccountMenuItemClicked:(id)sender
+{
+    [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -244,7 +268,18 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 - (NSString *)currentDropboxAccount
 {
-    return [[[SAMKeychain accountsForService:kRHEADropboxAccountKey] firstObject] objectForKey:kSAMKeychainAccountKey];
+    NSString *account = nil;
+    for (NSDictionary *const keychainAccount in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
+        if ([[keychainAccount objectForKey:kSAMKeychainAccountKey] isEqualToString:[[NSUserDefaults standardUserDefaults] stringForKey:kRHEACurrentDropboxuAccountKey]]) {
+            account = [keychainAccount objectForKey:kSAMKeychainAccountKey];
+            break;
+        }
+    }
+    // Fall back to first available account if there's no match in NSUserDefaults.
+    if (!account) {
+        account = [[[SAMKeychain accountsForService:kRHEADropboxAccountKey] firstObject] objectForKey:kSAMKeychainAccountKey];
+    }
+    return account;
 }
 
 - (NSString *)dropboxToken
