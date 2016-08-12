@@ -27,7 +27,7 @@ static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox"
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
-@interface AppDelegate () <NSWindowDelegate, NSUserNotificationCenterDelegate>
+@interface AppDelegate () <NSWindowDelegate, NSUserNotificationCenterDelegate, NSMenuDelegate>
 
 @property (weak) IBOutlet NSWindow *window;
 @property (nonatomic, strong) NSStatusItem *statusItem;
@@ -46,12 +46,13 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     // Set up our status bar icon and menu
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
     self.statusItem.button.image = [NSImage imageNamed:@"StatusBarButtonImage"];
-    self.statusItem.button.action = @selector(statusItemClicked:);
     
-    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType]];
+    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType, NSStringPboardType]];
     self.statusItem.button.window.delegate = self;
     
-    [self updateMenu];
+    NSMenu *const menu = [[NSMenu alloc] init];
+    menu.delegate = self;
+    self.statusItem.menu = menu;
     
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
@@ -87,22 +88,24 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 #pragma mark - Menu Management
 
-- (void)statusItemClicked:(id)sender
+- (void)menuWillOpen:(NSMenu *)menu
 {
-    // no-op
-}
-
-- (void)updateMenu
-{
-    NSMenu *const menu = [[NSMenu alloc] init];
+    [menu removeAllItems];
+    
     if ([self dropboxToken]) {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Recents" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+        
+        id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+        if ([resolvedEntity isKindOfClass:[NSString class]]) {
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
+        } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
+        }
     } else {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Log in to Dropbox" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
     }
     [menu addItem:[NSMenuItem separatorItem]];
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"]];
-    self.statusItem.menu = menu;
 }
 
 - (void)authenticateMenuItemClicked:(id)sender
@@ -115,6 +118,22 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     // http://stackoverflow.com/questions/381021/launch-safari-from-a-mac-application
     // TODO: Open in new tab.
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/recents"]];
+}
+
+- (void)uploadPasteboardMenuItemClicked:(id)sender
+{
+    id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+    if ([resolvedEntity isKindOfClass:[NSString class]]) {
+        [self uploadFileAtPath:resolvedEntity];
+    }
+}
+
+- (void)shortenPasteboardMenuItemClicked:(id)sender
+{
+    id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+    if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        [self shortenURL:resolvedEntity];
+    }
 }
 
 #pragma mark - Notifications
