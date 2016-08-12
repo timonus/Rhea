@@ -130,12 +130,17 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 - (id)resolveDraggingInfo:(id<NSDraggingInfo>)sender
 {
+    return [self resolvePasteboard:[sender draggingPasteboard]];
+}
+
+- (id)resolvePasteboard:(NSPasteboard *)pasteboard
+{
     // http://stackoverflow.com/a/423702/3943258
     
     id resolvedEntity = nil;
     
-    NSArray *const paths = [[sender draggingPasteboard] propertyListForType:NSFilenamesPboardType];
-    NSArray *const urls = [[sender draggingPasteboard] propertyListForType:NSURLPboardType];
+    NSArray *const paths = [pasteboard propertyListForType:NSFilenamesPboardType];
+    NSArray *const urls = [pasteboard propertyListForType:NSURLPboardType];
     
     if (paths.count > 0) {
         if (paths.count == 1) {
