@@ -14,7 +14,12 @@
 {
     id result = nil;
     if ([entity isKindOfClass:[NSString class]]) {
-        result = [self resolvePath:entity];
+        NSURL *const url = [NSURL URLWithString:entity];
+        if (url) {
+            result = [self resolveURL:url];
+        } else {
+            result = [self resolvePath:entity];
+        }
     } else if ([entity isKindOfClass:[NSURL class]]) {
         result = [self resolveURL:entity];
     }

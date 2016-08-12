@@ -160,6 +160,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     
     NSArray *const paths = [pasteboard propertyListForType:NSFilenamesPboardType];
     NSArray *const urls = [pasteboard propertyListForType:NSURLPboardType];
+    NSString *const string = [pasteboard propertyListForType:NSStringPboardType];
     
     if (paths.count > 0) {
         if (paths.count == 1) {
@@ -180,6 +181,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         if (url) {
             resolvedEntity = [RHEAEntityResolver resolveEntity:url];
         }
+    } else if (string) {
+        resolvedEntity = [RHEAEntityResolver resolveEntity:string];
     }
     
     return resolvedEntity;
