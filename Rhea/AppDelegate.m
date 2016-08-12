@@ -11,6 +11,7 @@
 #import "RHEAEntityResolver.h"
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
+#import "SAMKeychain.h"
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
@@ -22,7 +23,7 @@
 static NSString *const kRHEADropboxAppKey = @"";
 static NSString *const kRHEADropboxRedirectURLString = @"";
 
-static NSString *const kRHEADropboxTokenKey = @"dropboxToken";
+static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -62,12 +63,21 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     NSString *const dropboxToken = [TJDropbox accessTokenFromURL:url withRedirectURL:[NSURL URLWithString:@"rhea-dropbox-auth://dropboxauth"]];
     
     if (dropboxToken) {
-        [[NSUserDefaults standardUserDefaults] setObject:dropboxToken forKey:kRHEADropboxTokenKey];
-        [self updateMenu];
-        
-        NSAlert *const alert = [[NSAlert alloc] init];
-        alert.messageText = @"Logged in to Dropbox!";
-        [alert runModal];
+        [TJDropbox getAccountInformationWithAccessToken:dropboxToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+            NSString *const email = parsedResponse[@"email"];
+            NSString *message = nil;
+            if (email) {
+                message = @"Logged in to Dropbox!";
+                [SAMKeychain setPassword:dropboxToken forService:kRHEADropboxAccountKey account:email];
+            } else {
+                message = @"Unable to log into Dropbox";
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = message;
+                [alert runModal];
+            });
+        }];
     }
 }
 
@@ -205,9 +215,14 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 #pragma mark - Dropbox
 
+- (NSString *)currentDropboxAccount
+{
+    return [[[SAMKeychain accountsForService:kRHEADropboxAccountKey] firstObject] objectForKey:kSAMKeychainAccountKey];
+}
+
 - (NSString *)dropboxToken
 {
-    return [[NSUserDefaults standardUserDefaults] stringForKey:kRHEADropboxTokenKey];
+    return [SAMKeychain passwordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
 }
 
 - (void)uploadFileAtPath:(NSString *const)path
