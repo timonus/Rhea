@@ -21,7 +21,7 @@
 // Key event monitoring: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 
 static NSString *const kRHEADropboxAppKey = @"";
-static NSString *const kRHEADropboxRedirectURLString = @"";
+static NSString *const kRHEADropboxRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used. 
 
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxuAccountKey = @"currentDropboxAccount";
