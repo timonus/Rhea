@@ -1,3 +1,6 @@
 [submodule "Vendor/TJDropbox"]
 	path = Vendor/TJDropbox
 	url = git@github.com:timonus/TJDropbox.git
+[submodule "Vendor/SAMKeychain"]
+	path = Vendor/SAMKeychain
+	url = https://github.com/timonus/samkeychain

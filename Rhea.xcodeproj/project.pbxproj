@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2209D5511D5D6FD400F49DAB /* SAMKeychain.m in Sources */ = {isa = PBXBuildFile; fileRef = 2209D54E1D5D6FD400F49DAB /* SAMKeychain.m */; };
+		2209D5521D5D6FD400F49DAB /* SAMKeychainQuery.m in Sources */ = {isa = PBXBuildFile; fileRef = 2209D5501D5D6FD400F49DAB /* SAMKeychainQuery.m */; };
 		222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802B91D52D1C90059CEF7 /* AppDelegate.m */; };
 		222802BD1D52D1C90059CEF7 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802BC1D52D1C90059CEF7 /* main.m */; };
 		222802BF1D52D1C90059CEF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 222802BE1D52D1C90059CEF7 /* Assets.xcassets */; };
@@ -17,6 +19,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2209D54D1D5D6FD400F49DAB /* SAMKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SAMKeychain.h; sourceTree = "<group>"; };
+		2209D54E1D5D6FD400F49DAB /* SAMKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAMKeychain.m; sourceTree = "<group>"; };
+		2209D54F1D5D6FD400F49DAB /* SAMKeychainQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SAMKeychainQuery.h; sourceTree = "<group>"; };
+		2209D5501D5D6FD400F49DAB /* SAMKeychainQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAMKeychainQuery.m; sourceTree = "<group>"; };
 		222802B51D52D1C90059CEF7 /* Rhea.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rhea.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		222802B81D52D1C90059CEF7 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		222802B91D52D1C90059CEF7 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
@@ -43,6 +49,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		2209D5531D5D6FD800F49DAB /* SAMKeychain */ = {
+			isa = PBXGroup;
+			children = (
+				2209D54D1D5D6FD400F49DAB /* SAMKeychain.h */,
+				2209D54E1D5D6FD400F49DAB /* SAMKeychain.m */,
+				2209D54F1D5D6FD400F49DAB /* SAMKeychainQuery.h */,
+				2209D5501D5D6FD400F49DAB /* SAMKeychainQuery.m */,
+			);
+			name = SAMKeychain;
+			sourceTree = "<group>";
+		};
 		222802AC1D52D1C90059CEF7 = {
 			isa = PBXGroup;
 			children = (
@@ -89,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				222802CD1D52D9590059CEF7 /* TJDropbox */,
+				2209D5531D5D6FD800F49DAB /* SAMKeychain */,
 			);
 			name = Vendor;
 			sourceTree = "<group>";
@@ -171,10 +189,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2209D5521D5D6FD400F49DAB /* SAMKeychainQuery.m in Sources */,
 				222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */,
 				227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */,
 				22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
+				2209D5511D5D6FD400F49DAB /* SAMKeychain.m in Sources */,
 				222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
