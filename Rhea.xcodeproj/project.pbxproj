@@ -19,10 +19,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		2209D54D1D5D6FD400F49DAB /* SAMKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SAMKeychain.h; sourceTree = "<group>"; };
-		2209D54E1D5D6FD400F49DAB /* SAMKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAMKeychain.m; sourceTree = "<group>"; };
-		2209D54F1D5D6FD400F49DAB /* SAMKeychainQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SAMKeychainQuery.h; sourceTree = "<group>"; };
-		2209D5501D5D6FD400F49DAB /* SAMKeychainQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = SAMKeychainQuery.m; sourceTree = "<group>"; };
+		2209D54D1D5D6FD400F49DAB /* SAMKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SAMKeychain.h; path = ../Vendor/SAMKeychain/Sources/SAMKeychain.h; sourceTree = "<group>"; };
+		2209D54E1D5D6FD400F49DAB /* SAMKeychain.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SAMKeychain.m; path = ../Vendor/SAMKeychain/Sources/SAMKeychain.m; sourceTree = "<group>"; };
+		2209D54F1D5D6FD400F49DAB /* SAMKeychainQuery.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SAMKeychainQuery.h; path = ../Vendor/SAMKeychain/Sources/SAMKeychainQuery.h; sourceTree = "<group>"; };
+		2209D5501D5D6FD400F49DAB /* SAMKeychainQuery.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = SAMKeychainQuery.m; path = ../Vendor/SAMKeychain/Sources/SAMKeychainQuery.m; sourceTree = "<group>"; };
 		222802B51D52D1C90059CEF7 /* Rhea.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rhea.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		222802B81D52D1C90059CEF7 /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		222802B91D52D1C90059CEF7 /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
