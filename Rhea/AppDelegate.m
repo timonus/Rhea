@@ -169,6 +169,11 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }
 }
 
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification
+{
+  return YES;
+}
+
 #pragma mark - Drag & Drop
 
 - (id)resolveDraggingInfo:(id<NSDraggingInfo>)sender
