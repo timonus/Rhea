@@ -169,8 +169,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     }
 }
 
-- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center
-     shouldPresentNotification:(NSUserNotification *)notification {
+- (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification
+{
   return YES;
 }
 
