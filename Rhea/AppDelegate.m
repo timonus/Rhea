@@ -12,6 +12,7 @@
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
+#import "RHEAStatusBarIconGenerator.h"
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
@@ -46,7 +47,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     
     // Set up our status bar icon and menu
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
-    self.statusItem.button.image = [NSImage imageNamed:@"StatusBarButtonImage"];
+    self.statusItem.button.image = [RHEAStatusBarIconGenerator imageWithUploadPercent:0.0];
     
     [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType, NSStringPboardType]];
     self.statusItem.button.window.delegate = self;
@@ -303,16 +304,20 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     
     // Begin uploading the file
     [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
-        // TODO: Show progress.
+        dispatch_async(dispatch_get_main_queue(), ^{
+            self.statusItem.button.image = [RHEAStatusBarIconGenerator imageWithUploadPercent:progress];
+        });
     } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-        if (error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (error) {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't upload file";
                 alert.informativeText = path;
                 [alert runModal];
-            });
-        }
+            } else {
+                self.statusItem.button.image = [RHEAStatusBarIconGenerator imageWithUploadPercent:0.0];
+            }
+        });
     }];
     
     // Copy a short link

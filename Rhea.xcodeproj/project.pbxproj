@@ -16,6 +16,7 @@
 		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
 		22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */; };
 		227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */ = {isa = PBXBuildFile; fileRef = 227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */; };
+		22B848921D6AA978006CB6AB /* RHEAStatusBarIconGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = 22B848911D6AA978006CB6AB /* RHEAStatusBarIconGenerator.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +37,8 @@
 		22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAGoogleClient.m; sourceTree = "<group>"; };
 		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
 		227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAEntityResolver.m; sourceTree = "<group>"; };
+		22B848901D6AA978006CB6AB /* RHEAStatusBarIconGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAStatusBarIconGenerator.h; sourceTree = "<group>"; };
+		22B848911D6AA978006CB6AB /* RHEAStatusBarIconGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAStatusBarIconGenerator.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +88,8 @@
 				22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */,
 				227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */,
 				227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */,
+				22B848901D6AA978006CB6AB /* RHEAStatusBarIconGenerator.h */,
+				22B848911D6AA978006CB6AB /* RHEAStatusBarIconGenerator.m */,
 				222802C91D52D9460059CEF7 /* Vendor */,
 				222802BE1D52D1C90059CEF7 /* Assets.xcassets */,
 				222802C01D52D1C90059CEF7 /* MainMenu.xib */,
@@ -194,6 +199,7 @@
 				227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */,
 				22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
+				22B848921D6AA978006CB6AB /* RHEAStatusBarIconGenerator.m in Sources */,
 				2209D5511D5D6FD400F49DAB /* SAMKeychain.m in Sources */,
 				222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */,
 			);
