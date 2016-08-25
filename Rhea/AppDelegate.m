@@ -124,7 +124,7 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
 
 - (void)authenticateMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:kRHEADropboxAppKey redirectURL:[NSURL URLWithString:kRHEADropboxRedirectURLString]]];
+    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[self dropboxAppKey] redirectURL:[self dropboxRedirectURL]]];
 }
 
 - (void)accountMenuItemSelected:(id)sender
@@ -391,6 +391,33 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             }
         });
     }];
+}
+
+- (NSString *)dropboxAppKey
+{
+    static NSString *appKey = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        appKey = [[[NSProcessInfo processInfo] environment] objectForKey:@"RHEA_DROPBOX_APP_KEY"];
+        if (!appKey) {
+            appKey = kRHEADropboxAppKey;
+        }
+    });
+    return appKey;
+}
+
+- (NSURL *)dropboxRedirectURL
+{
+    static NSURL *url = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSString *urlString = [[[NSProcessInfo processInfo] environment] objectForKey:@"RHEA_DROPBOX_REDIRECT_URL"];
+        if (!urlString) {
+            urlString = kRHEADropboxRedirectURLString;
+        }
+        url = [NSURL URLWithString:urlString];
+    });
+    return url;
 }
 
 #pragma mark - Link Shortening

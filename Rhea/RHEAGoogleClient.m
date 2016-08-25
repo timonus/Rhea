@@ -8,14 +8,27 @@
 
 #import "RHEAGoogleClient.h"
 
-static NSString *const kRHEAGoogleKey = @"";
+static NSString *const kRHEAGoogleAPIKey = @"";
 
 @implementation RHEAGoogleClient
+
++ (NSString *)apiKey
+{
+    static NSString *apiKey = nil;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        apiKey = [[[NSProcessInfo processInfo] environment] objectForKey:@"RHEA_GOOGLE_API_KEY"];
+        if (!apiKey) {
+            apiKey = kRHEAGoogleAPIKey;
+        }
+    });
+    return apiKey;
+}
 
 + (void)shortenURL:(NSURL *const)url completion:(void (^)(NSURL *shortenedURL))completion
 {
     // https://developers.google.com/url-shortener/
-    NSMutableURLRequest *const request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://www.googleapis.com/urlshortener/v1/url?key=%@", kRHEAGoogleKey]]];
+    NSMutableURLRequest *const request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[NSString stringWithFormat:@"https://www.googleapis.com/urlshortener/v1/url?key=%@", [self apiKey]]]];
     [request setHTTPBody:[NSJSONSerialization dataWithJSONObject:@{@"longUrl": url.absoluteString} options:0 error:nil]];
     [request setHTTPMethod:@"POST"];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
