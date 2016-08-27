@@ -8,6 +8,7 @@
 
 #import "AppDelegate.h"
 
+#import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
@@ -28,10 +29,16 @@ static NSString *const kRHEACurrentDropboxuAccountKey = @"currentDropboxAccount"
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
+static NSString *const kRHEARecentActionTitleKey = @"title";
+static NSString *const kRHEARecentActionURLKey = @"url";
+static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
+
 @interface AppDelegate () <NSWindowDelegate, NSUserNotificationCenterDelegate, NSMenuDelegate>
 
 @property (weak) IBOutlet NSWindow *window;
 @property (nonatomic, strong) NSStatusItem *statusItem;
+
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *recentActions;
 
 @end
 
@@ -54,6 +61,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     NSMenu *const menu = [[NSMenu alloc] init];
     menu.delegate = self;
     self.statusItem.menu = menu;
+    
+    self.recentActions = [NSMutableArray new];
     
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
@@ -94,7 +103,23 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     [menu removeAllItems];
     
     if ([self dropboxToken]) {
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Recents" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+        NSMenuItem *recentsItem = [[NSMenuItem alloc] initWithTitle:@"Recents" action:nil keyEquivalent:@""];
+        NSMenu *recentsMenu = [[NSMenu alloc] init];
+        recentsItem.submenu = recentsMenu;
+        if (self.recentActions.count == 0) {
+            NSMenuItem *noRecentsItem = [[NSMenuItem alloc] initWithTitle:@"No Recents" action:nil keyEquivalent:@""];
+            noRecentsItem.enabled = NO;
+            [recentsMenu addItem:noRecentsItem];
+        } else {
+            for (NSDictionary *recentAction in self.recentActions) {
+                RHEAMenuItem *recentMenuItem = [[RHEAMenuItem alloc] initWithTitle:recentAction[kRHEARecentActionTitleKey] action:@selector(recentMenuItemClicked:) keyEquivalent:@""];
+                recentMenuItem.context = recentAction;
+                [recentsMenu addItem:recentMenuItem];
+            }
+        }
+        [recentsMenu addItem:[NSMenuItem separatorItem]];
+        [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View all on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+        [menu addItem:recentsItem];
         
         id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
         if ([resolvedEntity isKindOfClass:[NSString class]]) {
@@ -152,6 +177,12 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     // http://stackoverflow.com/questions/381021/launch-safari-from-a-mac-application
     // TODO: Open in new tab.
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/recents"]];
+}
+
+- (void)recentMenuItemClicked:(id)sender
+{
+    NSDictionary *action = [(RHEAMenuItem *)sender context];
+    [self copyLinkFromRecentAction:action];
 }
 
 - (void)uploadPasteboardMenuItemClicked:(id)sender
@@ -345,6 +376,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
+                
+                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
@@ -393,6 +426,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
+                
+                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
@@ -422,6 +457,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
             });
+            
+            [self addRecentActionWithTitle:url.absoluteString url:shortenedURL];
         } else {
             NSAlert *const alert = [[NSAlert alloc] init];
             alert.messageText = @"Couldn't shorten link";
@@ -429,6 +466,45 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             [alert runModal];
         }
     }];
+}
+
+#pragma mark - Recents
+
+- (void)addRecentActionWithTitle:(NSString *const)title url:(NSURL *)url
+{
+    NSDictionary *action = @{
+        kRHEARecentActionTitleKey: title,
+        kRHEARecentActionURLKey: url
+    };
+    
+    if (self.recentActions.count == 0) {
+        [self.recentActions addObject:action];
+    } else {
+        [self.recentActions insertObject:action atIndex:0];
+    }
+    
+    // Trim to max count
+    while (self.recentActions.count > kRHEARecentActionsMaxCountKey) {
+        [self.recentActions removeLastObject];
+    }
+}
+
+- (void)copyLinkFromRecentAction:(NSDictionary *)action
+{
+    NSString *const urlString = [(NSURL *)action[kRHEARecentActionURLKey] absoluteString];
+    [self copyStringToPasteboard:urlString];
+    
+    NSUserNotification *const notification = [[NSUserNotification alloc] init];
+    notification.title = @"Copied link";
+    notification.subtitle = action[kRHEARecentActionTitleKey];
+    notification.informativeText = urlString;
+    notification.hasActionButton = YES;
+    notification.actionButtonTitle = @"View";
+    notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
+    [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+    });
 }
 
 #pragma mark - Utilities
