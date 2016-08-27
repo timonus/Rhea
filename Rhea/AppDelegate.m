@@ -213,7 +213,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (BOOL)userNotificationCenter:(NSUserNotificationCenter *)center shouldPresentNotification:(NSUserNotification *)notification
 {
-  return YES;
+    return YES;
 }
 
 #pragma mark - Drag & Drop
