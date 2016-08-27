@@ -13,6 +13,7 @@
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
+#import "NSURL+Rhea.h"
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
@@ -458,7 +459,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
             });
             
-            [self addRecentActionWithTitle:url.absoluteString url:shortenedURL];
+            [self addRecentActionWithTitle:[url trimmedUserFacingString] url:shortenedURL];
         } else {
             NSAlert *const alert = [[NSAlert alloc] init];
             alert.messageText = @"Couldn't shorten link";
