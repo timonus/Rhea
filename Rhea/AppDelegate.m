@@ -105,16 +105,26 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         
         [menu addItem:[NSMenuItem separatorItem]];
         
-        for (NSDictionary *const account in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
+        NSArray *const accounts = [SAMKeychain accountsForService:kRHEADropboxAccountKey];
+        NSMenu *const accountsMenu = [[NSMenu alloc] init];
+        NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
+        titleMenuItem.enabled = NO;
+        [accountsMenu addItem:titleMenuItem];
+        for (NSDictionary *const account in accounts) {
             NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
             NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
             if ([email isEqualToString:[self currentDropboxAccount]]) {
                 menuItem.state = NSOnState;
+                
+                NSMenuItem *topLevelAccountMenuItem = [[NSMenuItem alloc] initWithTitle:email action:nil keyEquivalent:@""];
+                topLevelAccountMenuItem.submenu = accountsMenu;
+                [menu addItem:topLevelAccountMenuItem];
             }
-            [menu addItem:menuItem];
+            [accountsMenu addItem:menuItem];
         }
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
+        [accountsMenu addItem:[NSMenuItem separatorItem]];
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
     } else {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Log in to Dropbox" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
     }
