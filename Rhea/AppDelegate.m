@@ -8,10 +8,12 @@
 
 #import "AppDelegate.h"
 
+#import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
+#import "NSURL+Rhea.h"
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
@@ -28,10 +30,16 @@ static NSString *const kRHEACurrentDropboxuAccountKey = @"currentDropboxAccount"
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
+static NSString *const kRHEARecentActionTitleKey = @"title";
+static NSString *const kRHEARecentActionURLKey = @"url";
+static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
+
 @interface AppDelegate () <NSWindowDelegate, NSUserNotificationCenterDelegate, NSMenuDelegate>
 
 @property (weak) IBOutlet NSWindow *window;
 @property (nonatomic, strong) NSStatusItem *statusItem;
+
+@property (nonatomic, strong) NSMutableArray<NSDictionary *> *recentActions;
 
 @end
 
@@ -54,6 +62,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     NSMenu *const menu = [[NSMenu alloc] init];
     menu.delegate = self;
     self.statusItem.menu = menu;
+    
+    self.recentActions = [NSMutableArray new];
     
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
@@ -94,7 +104,23 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     [menu removeAllItems];
     
     if ([self dropboxToken]) {
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Recents" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+        NSMenuItem *recentsItem = [[NSMenuItem alloc] initWithTitle:@"Recents" action:nil keyEquivalent:@""];
+        NSMenu *recentsMenu = [[NSMenu alloc] init];
+        recentsItem.submenu = recentsMenu;
+        if (self.recentActions.count == 0) {
+            NSMenuItem *noRecentsItem = [[NSMenuItem alloc] initWithTitle:@"No Recents" action:nil keyEquivalent:@""];
+            noRecentsItem.enabled = NO;
+            [recentsMenu addItem:noRecentsItem];
+        } else {
+            for (NSDictionary *recentAction in self.recentActions) {
+                RHEAMenuItem *recentMenuItem = [[RHEAMenuItem alloc] initWithTitle:recentAction[kRHEARecentActionTitleKey] action:@selector(recentMenuItemClicked:) keyEquivalent:@""];
+                recentMenuItem.context = recentAction;
+                [recentsMenu addItem:recentMenuItem];
+            }
+        }
+        [recentsMenu addItem:[NSMenuItem separatorItem]];
+        [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View all on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+        [menu addItem:recentsItem];
         
         id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
         if ([resolvedEntity isKindOfClass:[NSString class]]) {
@@ -105,16 +131,26 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
         
         [menu addItem:[NSMenuItem separatorItem]];
         
-        for (NSDictionary *const account in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
+        NSArray *const accounts = [SAMKeychain accountsForService:kRHEADropboxAccountKey];
+        NSMenu *const accountsMenu = [[NSMenu alloc] init];
+        NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
+        titleMenuItem.enabled = NO;
+        [accountsMenu addItem:titleMenuItem];
+        for (NSDictionary *const account in accounts) {
             NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
             NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
             if ([email isEqualToString:[self currentDropboxAccount]]) {
                 menuItem.state = NSOnState;
+                
+                NSMenuItem *topLevelAccountMenuItem = [[NSMenuItem alloc] initWithTitle:email action:nil keyEquivalent:@""];
+                topLevelAccountMenuItem.submenu = accountsMenu;
+                [menu addItem:topLevelAccountMenuItem];
             }
-            [menu addItem:menuItem];
+            [accountsMenu addItem:menuItem];
         }
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
+        [accountsMenu addItem:[NSMenuItem separatorItem]];
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
     } else {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Log in to Dropbox" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
     }
@@ -142,6 +178,12 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
     // http://stackoverflow.com/questions/381021/launch-safari-from-a-mac-application
     // TODO: Open in new tab.
     [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/recents"]];
+}
+
+- (void)recentMenuItemClicked:(id)sender
+{
+    NSDictionary *action = [(RHEAMenuItem *)sender context];
+    [self copyLinkFromRecentAction:action];
 }
 
 - (void)uploadPasteboardMenuItemClicked:(id)sender
@@ -335,6 +377,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
+                
+                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
@@ -383,6 +427,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
+                
+                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
@@ -412,6 +458,8 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                 [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
             });
+            
+            [self addRecentActionWithTitle:[url trimmedUserFacingString] url:shortenedURL];
         } else {
             NSAlert *const alert = [[NSAlert alloc] init];
             alert.messageText = @"Couldn't shorten link";
@@ -419,6 +467,45 @@ static NSString *const kRHEANotificationURLStringKey = @"url";
             [alert runModal];
         }
     }];
+}
+
+#pragma mark - Recents
+
+- (void)addRecentActionWithTitle:(NSString *const)title url:(NSURL *)url
+{
+    NSDictionary *action = @{
+        kRHEARecentActionTitleKey: title,
+        kRHEARecentActionURLKey: url
+    };
+    
+    if (self.recentActions.count == 0) {
+        [self.recentActions addObject:action];
+    } else {
+        [self.recentActions insertObject:action atIndex:0];
+    }
+    
+    // Trim to max count
+    while (self.recentActions.count > kRHEARecentActionsMaxCountKey) {
+        [self.recentActions removeLastObject];
+    }
+}
+
+- (void)copyLinkFromRecentAction:(NSDictionary *)action
+{
+    NSString *const urlString = [(NSURL *)action[kRHEARecentActionURLKey] absoluteString];
+    [self copyStringToPasteboard:urlString];
+    
+    NSUserNotification *const notification = [[NSUserNotification alloc] init];
+    notification.title = @"Copied link";
+    notification.subtitle = action[kRHEARecentActionTitleKey];
+    notification.informativeText = urlString;
+    notification.hasActionButton = YES;
+    notification.actionButtonTitle = @"View";
+    notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
+    [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+    });
 }
 
 #pragma mark - Utilities
