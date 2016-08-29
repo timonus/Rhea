@@ -12,11 +12,12 @@
 
 - (NSString *)trimmedUserFacingString
 {
-    NSURLComponents *components = [NSURLComponents componentsWithURL:self resolvingAgainstBaseURL:YES];
-    components.scheme = nil;
+    NSURLComponents *components = [NSURLComponents componentsWithURL:self resolvingAgainstBaseURL:NO];
     components.host = [components.host stringByReplacingOccurrencesOfString:@"www." withString:@""];
     components.queryItems = nil;
-    return components.URL.absoluteString;
+    NSString *string = components.URL.absoluteString;
+    string = [string stringByReplacingOccurrencesOfString:@"http(s)?://" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, string.length)];
+    return string;
 }
 
 @end
