@@ -1,5 +1,5 @@
 //
-//  RHEAGoogleClient.h
+//  RHEAURLShortener.h
 //  Rhea
 //
 //  Created by Tim Johnsen on 8/4/16.
@@ -10,7 +10,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RHEAGoogleClient : NSObject
+@interface RHEAURLShortener : NSObject
 
 + (void)shortenURL:(NSURL *const)url completion:(void (^)(NSURL *shortenedURL))completion;
 

@@ -14,7 +14,7 @@
 		222802BF1D52D1C90059CEF7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 222802BE1D52D1C90059CEF7 /* Assets.xcassets */; };
 		222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 222802C01D52D1C90059CEF7 /* MainMenu.xib */; };
 		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
-		22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */; };
+		22336DF41D543F9A00654A6C /* RHEAURLShortener.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAURLShortener.m */; };
 		2261D4AC1D7219B300E6ECDD /* RHEAMenuItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */; };
 		227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */ = {isa = PBXBuildFile; fileRef = 227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */; };
 		22DE17BA1D721B1D003DC15C /* NSURL+Rhea.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DE17B91D721B1D003DC15C /* NSURL+Rhea.m */; };
@@ -34,8 +34,8 @@
 		222802C31D52D1C90059CEF7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		222802CA1D52D9550059CEF7 /* TJDropbox.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TJDropbox.h; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.h; sourceTree = "<group>"; };
 		222802CB1D52D9550059CEF7 /* TJDropbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TJDropbox.m; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.m; sourceTree = "<group>"; };
-		22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAGoogleClient.h; sourceTree = "<group>"; };
-		22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAGoogleClient.m; sourceTree = "<group>"; };
+		22336DF21D543F9A00654A6C /* RHEAURLShortener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAURLShortener.h; sourceTree = "<group>"; };
+		22336DF31D543F9A00654A6C /* RHEAURLShortener.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAURLShortener.m; sourceTree = "<group>"; };
 		2261D4AA1D7219B300E6ECDD /* RHEAMenuItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAMenuItem.h; sourceTree = "<group>"; };
 		2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAMenuItem.m; sourceTree = "<group>"; };
 		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
@@ -89,8 +89,8 @@
 				222802B91D52D1C90059CEF7 /* AppDelegate.m */,
 				2261D4AA1D7219B300E6ECDD /* RHEAMenuItem.h */,
 				2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */,
-				22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */,
-				22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */,
+				22336DF21D543F9A00654A6C /* RHEAURLShortener.h */,
+				22336DF31D543F9A00654A6C /* RHEAURLShortener.m */,
 				227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */,
 				227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */,
 				22DE17B81D721B1D003DC15C /* NSURL+Rhea.h */,
@@ -203,7 +203,7 @@
 				22DE17BA1D721B1D003DC15C /* NSURL+Rhea.m in Sources */,
 				222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */,
 				227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */,
-				22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */,
+				22336DF41D543F9A00654A6C /* RHEAURLShortener.m in Sources */,
 				2261D4AC1D7219B300E6ECDD /* RHEAMenuItem.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
 				2209D5511D5D6FD400F49DAB /* SAMKeychain.m in Sources */,

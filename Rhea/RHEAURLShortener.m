@@ -1,16 +1,16 @@
 //
-//  RHEAGoogleClient.m
+//  RHEAURLShortener.m
 //  Rhea
 //
 //  Created by Tim Johnsen on 8/4/16.
 //  Copyright © 2016 tijo. All rights reserved.
 //
 
-#import "RHEAGoogleClient.h"
+#import "RHEAURLShortener.h"
 
 static NSString *const kRHEAGoogleKey = @"";
 
-@implementation RHEAGoogleClient
+@implementation RHEAURLShortener
 
 + (void)shortenURL:(NSURL *const)url completion:(void (^)(NSURL *shortenedURL))completion
 {

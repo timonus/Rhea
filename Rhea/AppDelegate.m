@@ -10,7 +10,7 @@
 
 #import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
-#import "RHEAGoogleClient.h"
+#import "RHEAURLShortener.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
@@ -443,7 +443,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)shortenURL:(NSURL *const)url
 {
-    [RHEAGoogleClient shortenURL:url completion:^(NSURL * _Nonnull shortenedURL) {
+    [RHEAURLShortener shortenURL:url completion:^(NSURL * _Nonnull shortenedURL) {
         if (shortenedURL) {
             [self copyStringToPasteboard:shortenedURL.absoluteString];
             
