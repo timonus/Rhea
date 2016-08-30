@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RHEAURLShortener : NSObject
 
 + (void)shortenURL:(NSURL *const)url completion:(void (^)(NSURL *shortenedURL))completion;
++ (void)googleShortenURL:(NSURL *const)url completion:(void (^)(NSURL *shortenedURL))completion;
 
 @end
 
