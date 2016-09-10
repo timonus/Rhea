@@ -231,7 +231,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     NSArray *const paths = [pasteboard propertyListForType:NSFilenamesPboardType];
     NSArray *const urls = [pasteboard propertyListForType:NSURLPboardType];
-    NSString *const string = [pasteboard propertyListForType:NSStringPboardType];
+    NSString *const string = [pasteboard stringForType:NSStringPboardType];
     
     if (paths.count > 0) {
         if (paths.count == 1) {
