@@ -342,13 +342,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if (currentToken && currentEmail) {
         [TJDropbox getAccountInformationWithAccessToken:currentToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
             // Check that the account credentials are still valid. If not we need to boot the user out.
-            if ([error tj_isInvalidAccessTokenError]) {
-                [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:currentEmail];
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    NSAlert *const alert = [[NSAlert alloc] init];
-                    alert.messageText = [NSString stringWithFormat:@"Your Dropbox account %@ has been disconnected.", currentEmail];
-                    [alert runModal];
-                });
+            if (error) {
+                [self handleDropboxError:error message:nil];
             } else {
                 // Check if the email needs to be updated.
                 NSString *const email = parsedResponse[@"email"];
@@ -387,14 +382,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
         // TODO: Show progress.
     } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-        if (error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                NSAlert *const alert = [[NSAlert alloc] init];
-                alert.messageText = @"Couldn't upload file";
-                alert.informativeText = path;
-                [alert runModal];
-            });
-        }
+        [self handleDropboxError:error message:@"Couldn't upload file"];
     }];
     
     // Copy a short link
@@ -440,12 +428,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // Copy the file
     [TJDropbox saveContentsOfURL:url toPath:remotePath accessToken:[self dropboxToken] completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         if (error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                NSAlert *const alert = [[NSAlert alloc] init];
-                alert.messageText = @"Couldn't copy file to Dropbox";
-                alert.informativeText = url.absoluteString;
-                [alert runModal];
-            });
+            [self handleDropboxError:error message:@"Couldn't copy file to Dropbox"];
         }
     }];
     
@@ -477,6 +460,30 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
         });
     }];
+}
+
+/// Handles expired Dropbox credentials specially.
+/// If you supply a nil message string no error will be presented to the user.
+- (void)handleDropboxError:(NSError *const)error message:(NSString *const)defaultMessage
+{
+    if (error) {
+        NSString *message = nil;
+        if ([error tj_isInvalidAccessTokenError]) {
+            NSString *const email = [self currentDropboxAccount];
+            [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:email];
+            message = [NSString stringWithFormat:@"Your Dropbox account %@ has been disconnected.", email];
+        } else {
+            message = defaultMessage;
+        }
+        
+        if (message) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                NSAlert *const alert = [[NSAlert alloc] init];
+                alert.messageText = message;
+                [alert runModal];
+            });
+        }
+    }
 }
 
 #pragma mark - Link Shortening
