@@ -67,6 +67,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
+    
+    [self updateCurrentAccountInformation];
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
@@ -166,11 +168,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 - (void)accountMenuItemSelected:(id)sender
 {
     [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxuAccountKey];
+    
+    [self updateCurrentAccountInformation];
 }
 
 - (void)signOutCurrentDropboxAccountMenuItemClicked:(id)sender
 {
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
+    
+    [self updateCurrentAccountInformation];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -327,6 +333,40 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         account = [[[SAMKeychain accountsForService:kRHEADropboxAccountKey] firstObject] objectForKey:kSAMKeychainAccountKey];
     }
     return account;
+}
+
+- (void)updateCurrentAccountInformation
+{
+    NSString *const currentToken = [self dropboxToken];
+    NSString *const currentEmail = [self currentDropboxAccount];
+    if (currentToken && currentEmail) {
+        [TJDropbox getAccountInformationWithAccessToken:currentToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+            // Check that the account credentials are still valid. If not we need to boot the user out.
+            if ([error tj_isInvalidAccessTokenError]) {
+                [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:currentEmail];
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSAlert *const alert = [[NSAlert alloc] init];
+                    alert.messageText = [NSString stringWithFormat:@"Your Dropbox account %@ has been disconnected.", currentEmail];
+                    [alert runModal];
+                });
+            } else {
+                // Check if the email needs to be updated.
+                NSString *const email = parsedResponse[@"email"];
+                if (email && ![email isEqualToString:currentEmail]) {
+                    
+                    // Make sure we keep the same "current" account even though its name is about to change.
+                    if ([[self currentDropboxAccount] isEqualToString:currentEmail]) {
+                        [[NSUserDefaults standardUserDefaults] setObject:email forKey:kRHEACurrentDropboxuAccountKey];
+                    }
+                    
+                    // Update the keychain entry
+                    [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:currentEmail];
+                    [SAMKeychain setPassword:currentToken forService:kRHEADropboxAccountKey account:email];
+                }
+            }
+        }];
+    }
+    
 }
 
 - (NSString *)dropboxToken
