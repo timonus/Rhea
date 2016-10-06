@@ -242,10 +242,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if (paths.count > 0) {
         if (paths.count == 1) {
             resolvedEntity = [RHEAEntityResolver resolveEntity:[paths firstObject]];
-        } else {
-            NSAlert *const alert = [[NSAlert alloc] init];
-            alert.messageText = @"Multiple files aren't supported at this time.";
-            [alert runModal];
         }
     } else if (urls.count > 0) {
         const id object = [urls firstObject];
