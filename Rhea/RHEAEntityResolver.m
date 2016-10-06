@@ -35,7 +35,11 @@
         NSURL *const url = [NSURL URLWithString:plist[@"URL"]];
         result = [self resolveURL:url];
     } else {
-        result = path;
+        BOOL isDirectory = NO;
+        BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory];
+        if (fileExists && !isDirectory) {
+            result = path;
+        }
     }
     return result;
 }
