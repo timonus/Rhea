@@ -23,7 +23,7 @@ Dropbox short links (db.tt) are copied to the clipboard while files are being up
 
 ## Link Shortening
 
-You can drag links into the statu bar to shorten them.
+You can drag links into the status bar to shorten them.
 
 ![](https://dl.dropboxusercontent.com/s/8sgrwkzcnib5isl/3-JqyP.gif?dl=0)
 
