@@ -15,10 +15,29 @@
 		222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 222802C01D52D1C90059CEF7 /* MainMenu.xib */; };
 		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
 		22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */; };
+		2254A1B01DAAAD4C00B3305A /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 2254A1AF1DAAAD4C00B3305A /* AppDelegate.m */; };
+		2254A1B31DAAAD4C00B3305A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 2254A1B21DAAAD4C00B3305A /* main.m */; };
+		2254A1B51DAAAD4C00B3305A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2254A1B41DAAAD4C00B3305A /* Assets.xcassets */; };
+		2254A1B81DAAAD4C00B3305A /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 2254A1B61DAAAD4C00B3305A /* MainMenu.xib */; };
+		2254A1BF1DAAAD6800B3305A /* ServiceManagement.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2254A1BE1DAAAD6800B3305A /* ServiceManagement.framework */; };
+		2254A1C21DAAAE3000B3305A /* Rhea Helper.app in CopyFiles */ = {isa = PBXBuildFile; fileRef = 2254A1AC1DAAAD4C00B3305A /* Rhea Helper.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2261D4AC1D7219B300E6ECDD /* RHEAMenuItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */; };
 		227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */ = {isa = PBXBuildFile; fileRef = 227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */; };
 		22DE17BA1D721B1D003DC15C /* NSURL+Rhea.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DE17B91D721B1D003DC15C /* NSURL+Rhea.m */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2254A1C11DAAAE1200B3305A /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Contents/Library/LoginItems;
+			dstSubfolderSpec = 1;
+			files = (
+				2254A1C21DAAAE3000B3305A /* Rhea Helper.app in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		2209D54D1D5D6FD400F49DAB /* SAMKeychain.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SAMKeychain.h; path = ../Vendor/SAMKeychain/Sources/SAMKeychain.h; sourceTree = "<group>"; };
@@ -36,6 +55,14 @@
 		222802CB1D52D9550059CEF7 /* TJDropbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TJDropbox.m; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.m; sourceTree = "<group>"; };
 		22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAGoogleClient.h; sourceTree = "<group>"; };
 		22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAGoogleClient.m; sourceTree = "<group>"; };
+		2254A1AC1DAAAD4C00B3305A /* Rhea Helper.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rhea Helper.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		2254A1AE1DAAAD4C00B3305A /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		2254A1AF1DAAAD4C00B3305A /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
+		2254A1B21DAAAD4C00B3305A /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
+		2254A1B41DAAAD4C00B3305A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		2254A1B71DAAAD4C00B3305A /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
+		2254A1B91DAAAD4C00B3305A /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2254A1BE1DAAAD6800B3305A /* ServiceManagement.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ServiceManagement.framework; path = System/Library/Frameworks/ServiceManagement.framework; sourceTree = SDKROOT; };
 		2261D4AA1D7219B300E6ECDD /* RHEAMenuItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAMenuItem.h; sourceTree = "<group>"; };
 		2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAMenuItem.m; sourceTree = "<group>"; };
 		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
@@ -46,6 +73,14 @@
 
 /* Begin PBXFrameworksBuildPhase section */
 		222802B21D52D1C90059CEF7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2254A1BF1DAAAD6800B3305A /* ServiceManagement.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2254A1A91DAAAD4C00B3305A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -70,7 +105,9 @@
 			isa = PBXGroup;
 			children = (
 				222802B71D52D1C90059CEF7 /* Rhea */,
+				2254A1AD1DAAAD4C00B3305A /* Rhea Helper */,
 				222802B61D52D1C90059CEF7 /* Products */,
+				2254A1BD1DAAAD6800B3305A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -78,6 +115,7 @@
 			isa = PBXGroup;
 			children = (
 				222802B51D52D1C90059CEF7 /* Rhea.app */,
+				2254A1AC1DAAAD4C00B3305A /* Rhea Helper.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -130,6 +168,35 @@
 			name = TJDropbox;
 			sourceTree = "<group>";
 		};
+		2254A1AD1DAAAD4C00B3305A /* Rhea Helper */ = {
+			isa = PBXGroup;
+			children = (
+				2254A1AE1DAAAD4C00B3305A /* AppDelegate.h */,
+				2254A1AF1DAAAD4C00B3305A /* AppDelegate.m */,
+				2254A1B41DAAAD4C00B3305A /* Assets.xcassets */,
+				2254A1B61DAAAD4C00B3305A /* MainMenu.xib */,
+				2254A1B91DAAAD4C00B3305A /* Info.plist */,
+				2254A1B11DAAAD4C00B3305A /* Supporting Files */,
+			);
+			path = "Rhea Helper";
+			sourceTree = "<group>";
+		};
+		2254A1B11DAAAD4C00B3305A /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				2254A1B21DAAAD4C00B3305A /* main.m */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		2254A1BD1DAAAD6800B3305A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				2254A1BE1DAAAD6800B3305A /* ServiceManagement.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -140,6 +207,7 @@
 				222802B11D52D1C90059CEF7 /* Sources */,
 				222802B21D52D1C90059CEF7 /* Frameworks */,
 				222802B31D52D1C90059CEF7 /* Resources */,
+				2254A1C11DAAAE1200B3305A /* CopyFiles */,
 			);
 			buildRules = (
 			);
@@ -148,6 +216,23 @@
 			name = Rhea;
 			productName = Rhea;
 			productReference = 222802B51D52D1C90059CEF7 /* Rhea.app */;
+			productType = "com.apple.product-type.application";
+		};
+		2254A1AB1DAAAD4C00B3305A /* Rhea Helper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2254A1BC1DAAAD4C00B3305A /* Build configuration list for PBXNativeTarget "Rhea Helper" */;
+			buildPhases = (
+				2254A1A81DAAAD4C00B3305A /* Sources */,
+				2254A1A91DAAAD4C00B3305A /* Frameworks */,
+				2254A1AA1DAAAD4C00B3305A /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Rhea Helper";
+			productName = "Rhea Helper";
+			productReference = 2254A1AC1DAAAD4C00B3305A /* Rhea Helper.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -161,6 +246,11 @@
 				TargetAttributes = {
 					222802B41D52D1C90059CEF7 = {
 						CreatedOnToolsVersion = 7.3.1;
+					};
+					2254A1AB1DAAAD4C00B3305A = {
+						CreatedOnToolsVersion = 8.0;
+						DevelopmentTeam = EH3585NP44;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
@@ -178,6 +268,7 @@
 			projectRoot = "";
 			targets = (
 				222802B41D52D1C90059CEF7 /* Rhea */,
+				2254A1AB1DAAAD4C00B3305A /* Rhea Helper */,
 			);
 		};
 /* End PBXProject section */
@@ -189,6 +280,15 @@
 			files = (
 				222802BF1D52D1C90059CEF7 /* Assets.xcassets in Resources */,
 				222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2254A1AA1DAAAD4C00B3305A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2254A1B51DAAAD4C00B3305A /* Assets.xcassets in Resources */,
+				2254A1B81DAAAD4C00B3305A /* MainMenu.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +311,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		2254A1A81DAAAD4C00B3305A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2254A1B31DAAAD4C00B3305A /* main.m in Sources */,
+				2254A1B01DAAAD4C00B3305A /* AppDelegate.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXVariantGroup section */
@@ -218,6 +327,14 @@
 			isa = PBXVariantGroup;
 			children = (
 				222802C11D52D1C90059CEF7 /* Base */,
+			);
+			name = MainMenu.xib;
+			sourceTree = "<group>";
+		};
+		2254A1B61DAAAD4C00B3305A /* MainMenu.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				2254A1B71DAAAD4C00B3305A /* Base */,
 			);
 			name = MainMenu.xib;
 			sourceTree = "<group>";
@@ -332,6 +449,42 @@
 			};
 			name = Release;
 		};
+		2254A1BA1DAAAD4C00B3305A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = EH3585NP44;
+				INFOPLIST_FILE = "Rhea Helper/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tijo.Rhea-Helper";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		2254A1BB1DAAAD4C00B3305A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_SUSPICIOUS_MOVES = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = EH3585NP44;
+				INFOPLIST_FILE = "Rhea Helper/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.tijo.Rhea-Helper";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -352,6 +505,14 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		2254A1BC1DAAAD4C00B3305A /* Build configuration list for PBXNativeTarget "Rhea Helper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2254A1BA1DAAAD4C00B3305A /* Debug */,
+				2254A1BB1DAAAD4C00B3305A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
