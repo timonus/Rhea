@@ -292,7 +292,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     BOOL didHandle = NO;
     
-    // 1. See if this is a remote URL we'd like to copy (control key)
+    // 1. See if this is a remote URL we'd like to copy (alt/option key)
     NSEvent *event = [[sender draggingDestinationWindow] currentEvent];
     if ([resolvedEntity isKindOfClass:[NSURL class]] && ([event modifierFlags] & NSAlternateKeyMask)) {
         [self saveFileAtURL:resolvedEntity];
