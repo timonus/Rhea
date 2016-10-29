@@ -14,7 +14,7 @@
 {
     id result = nil;
     if ([entity isKindOfClass:[NSString class]]) {
-        NSURL *const url = [NSURL URLWithString:entity];
+        NSURL *const url = [NSURL URLWithString:[(NSString *)entity stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
         if (url.scheme.length > 0) { // -URLWithString: parses file paths successfully, check the scheme to ensure it's not just a path.
             result = [self resolveURL:url];
         } else {
