@@ -502,7 +502,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
             });
             
-            [self addRecentActionWithTitle:[url trimmedUserFacingString] url:shortenedURL];
+            [self addRecentActionWithTitle:[NSString stringWithFormat:@"🔗 %@", [url trimmedUserFacingString]] url:shortenedURL];
         } else {
             NSAlert *const alert = [[NSAlert alloc] init];
             alert.messageText = @"Couldn't shorten link";
