@@ -15,6 +15,8 @@
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
 
+#import <CommonCrypto/CommonDigest.h>
+
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
 // Handling incoming URLs: http://fredandrandall.com/blog/2011/07/30/how-to-launch-your-macios-app-with-a-custom-url/
@@ -368,7 +370,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSURL *const fileURL = [NSURL fileURLWithPath:path];
     NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [fileURL pathExtension];
-    NSString *const suffix = [self randomSuffix];
+    
+    // Append first 4 non-special characters of the base 64 MD5 hash of the file contents to it.
+    // Better than random because repeated uploads won't be stored multiple times.
+    unsigned char result[CC_MD5_DIGEST_LENGTH];
+    NSData *const data = [NSData dataWithContentsOfFile:path];
+    CC_MD5(data.bytes, (CC_LONG)data.length, result);
+    NSString *suffix = [[NSData dataWithBytes:result length:CC_MD5_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
+    suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
+    suffix = [suffix substringToIndex:MIN(4, suffix.length)];
+    
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
     
