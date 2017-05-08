@@ -28,7 +28,7 @@ static NSString *const kRHEADropboxAppKey = @"";
 static NSString *const kRHEADropboxRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used. 
 
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
-static NSString *const kRHEACurrentDropboxuAccountKey = @"currentDropboxAccount";
+static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -169,7 +169,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)accountMenuItemSelected:(id)sender
 {
-    [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxuAccountKey];
+    [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxAccountKey];
     
     [self updateCurrentAccountInformation];
 }
@@ -319,7 +319,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     NSString *account = nil;
     for (NSDictionary *const keychainAccount in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
-        if ([[keychainAccount objectForKey:kSAMKeychainAccountKey] isEqualToString:[[NSUserDefaults standardUserDefaults] stringForKey:kRHEACurrentDropboxuAccountKey]]) {
+        if ([[keychainAccount objectForKey:kSAMKeychainAccountKey] isEqualToString:[[NSUserDefaults standardUserDefaults] stringForKey:kRHEACurrentDropboxAccountKey]]) {
             account = [keychainAccount objectForKey:kSAMKeychainAccountKey];
             break;
         }
@@ -347,7 +347,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     
                     // Make sure we keep the same "current" account even though its name is about to change.
                     if ([[self currentDropboxAccount] isEqualToString:currentEmail]) {
-                        [[NSUserDefaults standardUserDefaults] setObject:email forKey:kRHEACurrentDropboxuAccountKey];
+                        [[NSUserDefaults standardUserDefaults] setObject:email forKey:kRHEACurrentDropboxAccountKey];
                     }
                     
                     // Update the keychain entry
