@@ -384,7 +384,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
     
     // Begin uploading the file
-    [TJDropbox uploadFileAtPath:path toPath:remotePath accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+    [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
         // TODO: Show progress.
     } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         [self handleDropboxError:error message:@"Couldn't upload file"];
