@@ -15,8 +15,10 @@
 		222802C21D52D1C90059CEF7 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 222802C01D52D1C90059CEF7 /* MainMenu.xib */; };
 		222802CC1D52D9550059CEF7 /* TJDropbox.m in Sources */ = {isa = PBXBuildFile; fileRef = 222802CB1D52D9550059CEF7 /* TJDropbox.m */; };
 		22336DF41D543F9A00654A6C /* RHEAGoogleClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */; };
+		22336DF71D544D9100654A6C /* NSString+Encryption.m in Sources */ = {isa = PBXBuildFile; fileRef = 22336DF61D544D9100654A6C /* NSString+Encryption.m */; };
 		2261D4AC1D7219B300E6ECDD /* RHEAMenuItem.m in Sources */ = {isa = PBXBuildFile; fileRef = 2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */; };
 		227C14D91D55B4D60043EABC /* RHEAEntityResolver.m in Sources */ = {isa = PBXBuildFile; fileRef = 227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */; };
+		22B48CBA207A942C00C5BFA9 /* RHEABitlyClient.m in Sources */ = {isa = PBXBuildFile; fileRef = 22B48CB9207A942C00C5BFA9 /* RHEABitlyClient.m */; };
 		22DE17BA1D721B1D003DC15C /* NSURL+Rhea.m in Sources */ = {isa = PBXBuildFile; fileRef = 22DE17B91D721B1D003DC15C /* NSURL+Rhea.m */; };
 /* End PBXBuildFile section */
 
@@ -36,10 +38,14 @@
 		222802CB1D52D9550059CEF7 /* TJDropbox.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TJDropbox.m; path = ../Vendor/TJDropbox/TJDropbox/TJDropbox.m; sourceTree = "<group>"; };
 		22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAGoogleClient.h; sourceTree = "<group>"; };
 		22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAGoogleClient.m; sourceTree = "<group>"; };
+		22336DF51D544D9100654A6C /* NSString+Encryption.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSString+Encryption.h"; sourceTree = "<group>"; };
+		22336DF61D544D9100654A6C /* NSString+Encryption.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSString+Encryption.m"; sourceTree = "<group>"; };
 		2261D4AA1D7219B300E6ECDD /* RHEAMenuItem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAMenuItem.h; sourceTree = "<group>"; };
 		2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAMenuItem.m; sourceTree = "<group>"; };
 		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
 		227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAEntityResolver.m; sourceTree = "<group>"; };
+		22B48CB8207A942C00C5BFA9 /* RHEABitlyClient.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RHEABitlyClient.h; sourceTree = "<group>"; };
+		22B48CB9207A942C00C5BFA9 /* RHEABitlyClient.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = RHEABitlyClient.m; sourceTree = "<group>"; };
 		22DE17B81D721B1D003DC15C /* NSURL+Rhea.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSURL+Rhea.h"; sourceTree = "<group>"; };
 		22DE17B91D721B1D003DC15C /* NSURL+Rhea.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSURL+Rhea.m"; sourceTree = "<group>"; };
 		22E2184D1DAAF84B00CD0EBE /* Rhea.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rhea.entitlements; sourceTree = "<group>"; };
@@ -93,6 +99,8 @@
 				2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */,
 				22336DF21D543F9A00654A6C /* RHEAGoogleClient.h */,
 				22336DF31D543F9A00654A6C /* RHEAGoogleClient.m */,
+				22B48CB8207A942C00C5BFA9 /* RHEABitlyClient.h */,
+				22B48CB9207A942C00C5BFA9 /* RHEABitlyClient.m */,
 				227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */,
 				227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */,
 				22DE17B81D721B1D003DC15C /* NSURL+Rhea.h */,
@@ -214,6 +222,7 @@
 				2261D4AC1D7219B300E6ECDD /* RHEAMenuItem.m in Sources */,
 				222802BD1D52D1C90059CEF7 /* main.m in Sources */,
 				2209D5511D5D6FD400F49DAB /* SAMKeychain.m in Sources */,
+				22B48CBA207A942C00C5BFA9 /* RHEABitlyClient.m in Sources */,
 				222802BA1D52D1C90059CEF7 /* AppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

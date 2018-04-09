@@ -10,6 +10,7 @@
 
 #import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
+#import "RHEABitlyClient.h"
 #import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
@@ -27,8 +28,14 @@
 static NSString *const kRHEADropboxAppKey = @"";
 static NSString *const kRHEADropboxRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used. 
 
+static NSString *const kRHEABitlyClientIdentifier = @"";
+static NSString *const kRHEABitlyClientSecret = @"";
+static NSString *const kRHEABitlyRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth. The "bitly-auth.html" file in this repo can be used.
+
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
+
+static NSString *const kRHEABitlyAccountKey = @"com.tijo.Rhea.Service.Bitly";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -70,13 +77,18 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
     
-    [self updateCurrentAccountInformation];
+    [self updateCurrentDropboxAccountInformation];
+    
+    // Looks janky, but this touches the keychain entries we'll need to access prior to the menu being clicked.
+    // If we attempt to access the keychain while the mouse click for the menu's being handled, the permission dialog that pops up won't receive any keyboard events. Which is bad.
+    [self menuWillOpen:[NSMenu new]];
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
     NSURL *const url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
     NSString *const dropboxToken = [TJDropbox accessTokenFromURL:url withRedirectURL:[NSURL URLWithString:@"rhea-dropbox-auth://dropboxauth"]];
+    NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
     
     if (dropboxToken) {
         [TJDropbox getAccountInformationWithAccessToken:dropboxToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
@@ -94,6 +106,25 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 [alert runModal];
             });
         }];
+    } else if (bitlyCode) {
+        [RHEABitlyClient authenticateWithCode:bitlyCode
+                             clientIdentifier:kRHEABitlyClientIdentifier
+                                 clientSecret:kRHEABitlyClientSecret
+                                  redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
+                                   completion:^(NSString * _Nullable accessToken) {
+                                       NSString *message = nil;
+                                       if (accessToken) {
+                                           message = @"Logged in to Bitly!";
+                                           [SAMKeychain setPassword:accessToken forService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
+                                       } else {
+                                           message = @"Unable to log into Bitly";
+                                       }
+                                       dispatch_async(dispatch_get_main_queue(), ^{
+                                           NSAlert *const alert = [[NSAlert alloc] init];
+                                           alert.messageText = message;
+                                           [alert runModal];
+                                       });
+                                   }];
     }
 }
 
@@ -107,78 +138,101 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     [menu removeAllItems];
     
-    if ([self dropboxToken]) {
-        NSMenuItem *recentsItem = [[NSMenuItem alloc] initWithTitle:@"Recents" action:nil keyEquivalent:@""];
-        NSMenu *recentsMenu = [[NSMenu alloc] init];
-        recentsItem.submenu = recentsMenu;
-        if (self.recentActions.count == 0) {
-            NSMenuItem *noRecentsItem = [[NSMenuItem alloc] initWithTitle:@"No Recents" action:nil keyEquivalent:@""];
-            noRecentsItem.enabled = NO;
-            [recentsMenu addItem:noRecentsItem];
-        } else {
-            for (NSDictionary *recentAction in self.recentActions) {
-                RHEAMenuItem *recentMenuItem = [[RHEAMenuItem alloc] initWithTitle:recentAction[kRHEARecentActionTitleKey] action:@selector(recentMenuItemClicked:) keyEquivalent:@""];
-                recentMenuItem.context = recentAction;
-                [recentsMenu addItem:recentMenuItem];
-            }
-        }
-        [recentsMenu addItem:[NSMenuItem separatorItem]];
-        [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View all on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
-        [menu addItem:recentsItem];
-        
-        id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
-        if ([resolvedEntity isKindOfClass:[NSString class]]) {
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
-        } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
-        }
-        
-        [menu addItem:[NSMenuItem separatorItem]];
-        
-        NSArray *const accounts = [SAMKeychain accountsForService:kRHEADropboxAccountKey];
-        NSMenu *const accountsMenu = [[NSMenu alloc] init];
-        NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
-        titleMenuItem.enabled = NO;
-        [accountsMenu addItem:titleMenuItem];
-        for (NSDictionary *const account in accounts) {
-            NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
-            NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
-            if ([email isEqualToString:[self currentDropboxAccount]]) {
-                menuItem.state = NSOnState;
-                
-                NSMenuItem *topLevelAccountMenuItem = [[NSMenuItem alloc] initWithTitle:email action:nil keyEquivalent:@""];
-                topLevelAccountMenuItem.submenu = accountsMenu;
-                [menu addItem:topLevelAccountMenuItem];
-            }
-            [accountsMenu addItem:menuItem];
-        }
-        [accountsMenu addItem:[NSMenuItem separatorItem]];
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", [self currentDropboxAccount]] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
+    NSMenuItem *recentsItem = [[NSMenuItem alloc] initWithTitle:@"Recents" action:nil keyEquivalent:@""];
+    NSMenu *recentsMenu = [[NSMenu alloc] init];
+    recentsItem.submenu = recentsMenu;
+    if (self.recentActions.count == 0) {
+        NSMenuItem *noRecentsItem = [[NSMenuItem alloc] initWithTitle:@"No Recents" action:nil keyEquivalent:@""];
+        noRecentsItem.enabled = NO;
+        [recentsMenu addItem:noRecentsItem];
     } else {
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Log in to Dropbox" action:@selector(authenticateMenuItemClicked:) keyEquivalent:@""]];
+        for (NSDictionary *recentAction in self.recentActions) {
+            RHEAMenuItem *recentMenuItem = [[RHEAMenuItem alloc] initWithTitle:recentAction[kRHEARecentActionTitleKey] action:@selector(recentMenuItemClicked:) keyEquivalent:@""];
+            recentMenuItem.context = recentAction;
+            [recentsMenu addItem:recentMenuItem];
+        }
+    }
+    NSString *const currentDropboxAccount = [self currentDropboxAccount];
+    const BOOL signedInToBitly = ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil);
+    if ([self currentDropboxAccount]) {
+        [recentsMenu addItem:[NSMenuItem separatorItem]];
+        [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View more on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
+    }
+    [menu addItem:recentsItem];
+    id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+    if ([resolvedEntity isKindOfClass:[NSString class]]) {
+        if (currentDropboxAccount) {
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
+        }
+    } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
     }
     [menu addItem:[NSMenuItem separatorItem]];
+    
+    
+    NSMenuItem *const accountsItem = [[NSMenuItem alloc] initWithTitle:@"Accounts" action:nil keyEquivalent:@""];
+    NSMenu *const accountsMenu = [[NSMenu alloc] init];
+    
+    NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
+    titleMenuItem.enabled = NO;
+    [accountsMenu addItem:titleMenuItem];
+    NSArray *const dropboxAccounts = [SAMKeychain accountsForService:kRHEADropboxAccountKey];
+    for (NSDictionary *const account in dropboxAccounts) {
+        NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
+        NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
+        if ([email isEqualToString:currentDropboxAccount]) {
+            menuItem.state = NSOnState;
+        }
+        [accountsMenu addItem:menuItem];
+    }
+    [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateDropboxMenuItemClicked:) keyEquivalent:@""]];
+    if (currentDropboxAccount) {
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", currentDropboxAccount] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
+    }
+    
+    titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Bitly Account" action:nil keyEquivalent:@""];
+    titleMenuItem.enabled = NO;
+    [accountsMenu addItem:titleMenuItem];
+    if (signedInToBitly) {
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign out" action:@selector(signOutBitlyAccountMenuItemClicked:) keyEquivalent:@""]];
+    } else {
+        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign in to Bitly" action:@selector(authenticateBitlyMenuItemClicked:) keyEquivalent:@""]];
+    }
+    
+    accountsItem.submenu = accountsMenu;
+    [menu addItem:accountsItem];
+    [menu addItem:[NSMenuItem separatorItem]];
+    
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"]];
 }
 
-- (void)authenticateMenuItemClicked:(id)sender
+- (void)authenticateDropboxMenuItemClicked:(id)sender
 {
     [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:kRHEADropboxAppKey redirectURL:[NSURL URLWithString:kRHEADropboxRedirectURLString]]];
+}
+
+- (void)authenticateBitlyMenuItemClicked:(id)sender
+{
+    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:kRHEABitlyClientIdentifier redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]]];
 }
 
 - (void)accountMenuItemSelected:(id)sender
 {
     [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxAccountKey];
     
-    [self updateCurrentAccountInformation];
+    [self updateCurrentDropboxAccountInformation];
 }
 
 - (void)signOutCurrentDropboxAccountMenuItemClicked:(id)sender
 {
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
     
-    [self updateCurrentAccountInformation];
+    [self updateCurrentDropboxAccountInformation];
+}
+
+- (void)signOutBitlyAccountMenuItemClicked:(id)sender
+{
+    [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -331,7 +385,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     return account;
 }
 
-- (void)updateCurrentAccountInformation
+- (void)updateCurrentDropboxAccountInformation
 {
     NSString *const currentToken = [self dropboxToken];
     NSString *const currentEmail = [self currentDropboxAccount];
@@ -518,7 +572,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)shortenURL:(NSURL *const)url
 {
-    [RHEAGoogleClient shortenURL:url completion:^(NSURL * _Nonnull shortenedURL) {
+    void (^completion)(NSURL *shortenedURL) = ^(NSURL *shortenedURL) {
         if (shortenedURL) {
             [self copyStringToPasteboard:shortenedURL.absoluteString];
             
@@ -541,7 +595,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             alert.informativeText = url.absoluteString;
             [alert runModal];
         }
-    }];
+    };
+    if ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil) {
+        [RHEABitlyClient shortenURL:url accessToken:[SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] completion:completion];
+    } else {
+        [RHEAGoogleClient shortenURL:url completion:completion];
+    }
 }
 
 #pragma mark - Recents
