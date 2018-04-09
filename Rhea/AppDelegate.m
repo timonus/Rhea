@@ -189,6 +189,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if (currentDropboxAccount) {
         [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", currentDropboxAccount] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
     }
+    [accountsMenu addItem:[NSMenuItem separatorItem]];
     
     titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Bitly Account" action:nil keyEquivalent:@""];
     titleMenuItem.enabled = NO;
