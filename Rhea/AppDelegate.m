@@ -154,7 +154,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
     NSString *const currentDropboxAccount = [self currentDropboxAccount];
     const BOOL signedInToBitly = ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil);
-    if ([self currentDropboxAccount]) {
+    if (currentDropboxAccount) {
         [recentsMenu addItem:[NSMenuItem separatorItem]];
         [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View more on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
     }
