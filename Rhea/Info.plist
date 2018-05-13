@@ -37,7 +37,6 @@
 		<dict>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>rhea-dropbox-auth</string>
 				<string>rhea-bitly-auth</string>
 			</array>
 		</dict>

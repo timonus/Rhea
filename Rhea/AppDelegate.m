@@ -75,12 +75,24 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // Looks janky, but this touches the keychain entries we'll need to access prior to the menu being clicked.
     // If we attempt to access the keychain while the mouse click for the menu's being handled, the permission dialog that pops up won't receive any keyboard events. Which is bad.
     [self menuWillOpen:[NSMenu new]];
+    
+#ifndef NS_BLOCK_ASSERTIONS
+    BOOL foundDropboxURL = NO;
+    NSString *const dropboxURLString = [NSString stringWithFormat:@"db-%@", [[self class] _dropboxAppKey]];
+    for (NSDictionary *schemeDictionary in [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleURLTypes"]) {
+        if ([[schemeDictionary objectForKey:@"CFBundleURLSchemes"] containsObject:dropboxURLString]) {
+            foundDropboxURL = YES;
+            break;
+        }
+    }
+    NSAssert(foundDropboxURL, @"You must add a URL scheme with the format \"db-yourDropboxAppKey\" in order for Rhea to authenticate with Dropbox correctly.");
+#endif
 }
 
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
     NSURL *const url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
-    NSString *const dropboxToken = [TJDropbox accessTokenFromURL:url withRedirectURL:[NSURL URLWithString:@"rhea-dropbox-auth://dropboxauth"]];
+    NSString *const dropboxToken = [TJDropbox accessTokenFromURL:url withClientIdentifier:[[self class] _dropboxAppKey]];
     NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
     
     if (dropboxToken) {
@@ -204,7 +216,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)authenticateDropboxMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:[NSURL URLWithString:[[self class] _dropboxRedirectURLString]]]];
+    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey]]];
 }
 
 - (void)authenticateBitlyMenuItemClicked:(id)sender
@@ -661,13 +673,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 + (NSString *)_dropboxAppKey
 {
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
-}
-
-+ (NSString *)_dropboxRedirectURLString
-{
-    // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used.
     NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
     return @"";
 }
