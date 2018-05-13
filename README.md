@@ -38,6 +38,6 @@ Or, if you have a URL copied to your clipboard you can shorten it via Rhea’s d
 
 - Rhea is open source, however Dropbox, Bitly, and Google API keys aren’t present in the open source repo. In order to develop Rhea you’ll need to provide these keys by doing the following:
 	- Fill in `_dropboxAppKey` and add a URL scheme with the format `db-yourDropboxAppKey` to your info.plist's entry for `CFBundleURLTypes` for Dropbox auth.
-	- Fill in `_bitlyClientIdentifier`, `_bitlyClientSecret`, `_bitlyRedirectURLString` for Bitly auth.
+	- Fill in `_bitlyClientIdentifier`, `_bitlyClientSecret`, and add `rhea-bitly-auth://bitlyauth` as a whitelisted redirect URI in your Bitly app's OAuth app settings for Bitly auth.
 	- Fill in `kRHEAGoogleKey` to use the Google URL shortener.
 - Rhea uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules), so run `git submodule update --init` when cloning.

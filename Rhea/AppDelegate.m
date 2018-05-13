@@ -29,6 +29,7 @@ static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox"
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 
 static NSString *const kRHEABitlyAccountKey = @"com.tijo.Rhea.Service.Bitly";
+static NSString *const kRHEABitlyRedirectURLString = @"rhea-bitly-auth://bitlyauth";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -115,7 +116,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         [RHEABitlyClient authenticateWithCode:bitlyCode
                              clientIdentifier:[[self class] _bitlyClientIdentifier]
                                  clientSecret:[[self class] _bitlyClientSecret]
-                                  redirectURL:[NSURL URLWithString:[[self class] _bitlyRedirectURLString]]
+                                  redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
                                    completion:^(NSString * _Nullable accessToken) {
                                        NSString *message = nil;
                                        if (accessToken) {
@@ -221,7 +222,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)authenticateBitlyMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:[[self class] _bitlyClientIdentifier] redirectURL:[NSURL URLWithString:[[self class] _bitlyRedirectURLString]]]];
+    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:[[self class] _bitlyClientIdentifier] redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]]];
 }
 
 - (void)accountMenuItemSelected:(id)sender
@@ -685,13 +686,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 + (NSString *)_bitlyClientSecret
 {
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
-}
-
-+ (NSString *)_bitlyRedirectURLString
-{
-    // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth. The "bitly-auth.html" file in this repo can be used.
     NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
     return @"";
 }
