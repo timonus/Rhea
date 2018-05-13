@@ -36,5 +36,5 @@ Or, if you have a URL copied to your clipboard you can shorten it via Rhea’s d
 
 ## Development
 
-- Rhea is open source, however the Dropbox, Bitly, and Google API keys used in the eventually-shipping version aren’t present in the open source repo. In order to develop Rhea you’ll need to provide these keys by filling in `kRHEADropboxAppKey`, `kRHEADropboxRedirectURLString`, `kRHEABitlyClientIdentifier`, `kRHEABitlyClientSecret`, `kRHEABitlyRedirectURLString`, and `kRHEAGoogleKey`.
+- Rhea is open source, however the Dropbox, Bitly, and Google API keys used in the eventually-shipping version aren’t present in the open source repo. In order to develop Rhea you’ll need to provide these keys by filling in `_dropboxAppKey`, `_dropboxRedirectURLString`, `_bitlyClientIdentifier`, `_bitlyClientSecret`, `_bitlyRedirectURLString`, and `kRHEAGoogleKey`.
 - Rhea uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules), so run `git submodule update --init` when cloning.

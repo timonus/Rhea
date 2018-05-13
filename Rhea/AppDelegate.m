@@ -25,13 +25,6 @@
 // Key presses: http://stackoverflow.com/questions/9268045/how-can-i-detect-that-the-shift-key-has-been-pressed
 // Key event monitoring: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 
-static NSString *const kRHEADropboxAppKey = @"";
-static NSString *const kRHEADropboxRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used. 
-
-static NSString *const kRHEABitlyClientIdentifier = @"";
-static NSString *const kRHEABitlyClientSecret = @"";
-static NSString *const kRHEABitlyRedirectURLString = @""; // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth. The "bitly-auth.html" file in this repo can be used.
-
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 
@@ -108,9 +101,9 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }];
     } else if (bitlyCode) {
         [RHEABitlyClient authenticateWithCode:bitlyCode
-                             clientIdentifier:kRHEABitlyClientIdentifier
-                                 clientSecret:kRHEABitlyClientSecret
-                                  redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
+                             clientIdentifier:[[self class] _bitlyClientIdentifier]
+                                 clientSecret:[[self class] _bitlyClientSecret]
+                                  redirectURL:[NSURL URLWithString:[[self class] _bitlyRedirectURLString]]
                                    completion:^(NSString * _Nullable accessToken) {
                                        NSString *message = nil;
                                        if (accessToken) {
@@ -211,12 +204,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)authenticateDropboxMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:kRHEADropboxAppKey redirectURL:[NSURL URLWithString:kRHEADropboxRedirectURLString]]];
+    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:[NSURL URLWithString:[[self class] _dropboxRedirectURLString]]]];
 }
 
 - (void)authenticateBitlyMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:kRHEABitlyClientIdentifier redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]]];
+    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:[[self class] _bitlyClientIdentifier] redirectURL:[NSURL URLWithString:[[self class] _bitlyRedirectURLString]]]];
 }
 
 - (void)accountMenuItemSelected:(id)sender
@@ -662,6 +655,40 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     [[NSPasteboard generalPasteboard] clearContents];
     [[NSPasteboard generalPasteboard] writeObjects:@[string]];
+}
+
+#pragma mark - Keys
+
++ (NSString *)_dropboxAppKey
+{
+    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
+    return @"";
+}
+
++ (NSString *)_dropboxRedirectURLString
+{
+    // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth (see https://goo.gl/VH4LXW). The "dropbox-auth.html" file in this repo can be used.
+    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
+    return @"";
+}
+
++ (NSString *)_bitlyClientIdentifier
+{
+    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
+    return @"";
+}
+
++ (NSString *)_bitlyClientSecret
+{
+    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
+    return @"";
+}
+
++ (NSString *)_bitlyRedirectURLString
+{
+    // NOTE: This is a remote URL to a file that should redirect back to Rhea to complete auth. The "bitly-auth.html" file in this repo can be used.
+    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
+    return @"";
 }
 
 @end
