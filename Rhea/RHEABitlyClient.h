@@ -14,7 +14,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Authentication
 + (NSURL *)authenticationURLWithClientIdentifier:(NSString *const)clientIdentifier redirectURL:(NSURL *const)redirectURL;
-+ (NSString *)accessCodeFromURL:(NSURL *const)url redirectURL:(NSURL *const)redirectURL;
++ (nullable NSString *)accessCodeFromURL:(NSURL *const)url redirectURL:(NSURL *const)redirectURL;
 + (void)authenticateWithCode:(NSString *const)code
             clientIdentifier:(NSString *const)clientIdentifier
                 clientSecret:(NSString *const)clientSecret

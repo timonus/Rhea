@@ -177,13 +177,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     titleMenuItem.enabled = NO;
     [accountsMenu addItem:titleMenuItem];
     NSArray *const dropboxAccounts = [SAMKeychain accountsForService:kRHEADropboxAccountKey];
-    for (NSDictionary *const account in dropboxAccounts) {
-        NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
-        NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
-        if ([email isEqualToString:currentDropboxAccount]) {
-            menuItem.state = NSOnState;
+    if (currentDropboxAccount) {
+        for (NSDictionary *const account in dropboxAccounts) {
+            NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
+            NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
+            if ([email isEqualToString:currentDropboxAccount]) {
+                menuItem.state = NSOnState;
+            }
+            [accountsMenu addItem:menuItem];
         }
-        [accountsMenu addItem:menuItem];
     }
     [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Add Dropbox Account" action:@selector(authenticateDropboxMenuItemClicked:) keyEquivalent:@""]];
     if (currentDropboxAccount) {
