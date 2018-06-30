@@ -2,7 +2,7 @@
 
 [![](https://dl.dropboxusercontent.com/s/ic4r48xv2ru5r3l/4ba5c0bcdbdf7d79eb87a72f42f16f72-12wH.jpg?dl=0)](https://en.wikipedia.org/wiki/Rhea_(moon))
 
-Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to [CloudApp](https://www.getcloudapp.com/) and [Dropshare](https://getdropsha.re/). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and the [Bitly](https://dev.bitly.com) or the [Google URL shortener](https://developers.google.com/url-shortener/) (to be deprecated in 2019) for shortening links.
+Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to [CloudApp](https://www.getcloudapp.com/) and [Dropshare](https://getdropsha.re/). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and the [Bitly](https://dev.bitly.com) or the [Google URL shortener](https://developers.google.com/url-shortener/) for shortening links.
 
 ## File Upload
 
@@ -18,7 +18,7 @@ Dropbox short links (db.tt) are copied to the clipboard while files are being up
 
 ### Technical Notes
 - The API one uses to copy a short link while an upload is occurring is deprecated by Dropbox. May have to move to another endpoint at some point.
-- A 4-character base 62 suffix is appended to all uploaded files to avoid filename conflicts.
+- A 4-character base 62 suffix is appended to all uploaded files to avoid filename conflicts. This suffix is consistent for a given file's contents, so repeat uploads of the same file with the same filename act as no-ops.
 - It is recommended that you use Dropbox’s [selective sync](https://www.dropbox.com/en/help/175) feature to disable the Rhea directory from being synched to your Mac.
 
 ## Link Shortening
