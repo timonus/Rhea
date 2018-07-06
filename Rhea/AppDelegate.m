@@ -15,6 +15,7 @@
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
+#import "RHEAIttyBittySiteUtility.h"
 
 #import <CommonCrypto/CommonDigest.h>
 
@@ -172,6 +173,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
+    } else if ([[NSPasteboard generalPasteboard] stringForType:NSStringPboardType].length > 0) {
+        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Create itty.bitty.site from copied text" action:@selector(ittyBittySiteMenuItemClicked:) keyEquivalent:@""]];
     }
     [menu addItem:[NSMenuItem separatorItem]];
     
@@ -270,6 +273,36 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
     if ([resolvedEntity isKindOfClass:[NSURL class]]) {
         [self shortenURL:resolvedEntity];
+    }
+}
+
+- (void)ittyBittySiteMenuItemClicked:(id)sender
+{
+    NSString *const pasteboardString = [[NSPasteboard generalPasteboard] stringForType:NSStringPboardType];
+    NSURL *ittyBittyURL = nil;
+    if (pasteboardString.length > 0) {
+        ittyBittyURL = [RHEAIttyBittySiteUtility generateIttyBittySiteURLWithTitle:nil body:pasteboardString];
+    }
+    if (ittyBittyURL) {
+        [self copyStringToPasteboard:ittyBittyURL.absoluteString];
+        
+        NSUserNotification *const notification = [[NSUserNotification alloc] init];
+        notification.title = @"Copied itty.bitty.site link";
+        notification.subtitle = pasteboardString;
+        notification.informativeText = ittyBittyURL.absoluteString;
+        notification.hasActionButton = YES;
+        notification.actionButtonTitle = @"View";
+        notification.userInfo = @{kRHEANotificationURLStringKey: ittyBittyURL.absoluteString};
+        [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+        });
+        
+        [self addRecentActionWithTitle:[NSString stringWithFormat:@"📝 %@", pasteboardString] url:ittyBittyURL];
+    } else {
+        NSAlert *const alert = [[NSAlert alloc] init];
+        alert.messageText = @"Couldn't generate itty.bitty.site";
+        [alert runModal];
     }
 }
 
