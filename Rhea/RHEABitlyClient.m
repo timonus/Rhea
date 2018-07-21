@@ -71,12 +71,15 @@
 
 + (void)shortenURL:(NSURL *const)url accessToken:(NSString *const)accessToken completion:(void (^)(NSURL *_Nullable shortenedURL))completion
 {
-    NSURLComponents *const components = [[NSURLComponents alloc] initWithString:@"https://api-ssl.bitly.com/v3/shorten"];
-    components.queryItems = @[
-                              [NSURLQueryItem queryItemWithName:@"access_token" value:accessToken],
-                              [NSURLQueryItem queryItemWithName:@"longUrl" value:url.absoluteString]
-                              ];
-    [[[NSURLSession sharedSession] dataTaskWithURL:components.URL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+    NSURLComponents *const components = [[NSURLComponents alloc] initWithString:@"https://api-ssl.bitly.com/v4/shorten"];
+    NSMutableURLRequest *const request = [NSMutableURLRequest requestWithURL:components.URL];
+    [request addValue:[NSString stringWithFormat:@"Bearer %@", accessToken] forHTTPHeaderField:@"Authorization"];
+    [request addValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    // TODO: Group is necessary here.
+    // To get it we need to fetch, store, and potentially occasionally update it.
+    [request setHTTPBody:[NSJSONSerialization dataWithJSONObject:@{@"long_url": url.absoluteString} options:0 error:nil]];
+    [request setHTTPMethod:@"POST"];
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
         NSString *urlString = nil;
         if (data.length > 0) {
             id resultObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
