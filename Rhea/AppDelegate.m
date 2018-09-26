@@ -449,31 +449,34 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // Begin uploading the file
     unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil][NSFileSize] unsignedLongLongValue];
     
-    if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
-        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
-            // TODO: Show progress.
-        } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-            if (error) {
-                [self handleDropboxError:error message:@"Couldn't upload file"];
-            } else {
-                NSUserNotification *const notification = [[NSUserNotification alloc] init];
-                notification.title = @"Upload complete";
-                notification.subtitle = filename;
-                if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                    notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
-                }
+    NSDate *const uploadStartDate = [NSDate date];
+    void (^completionBlock)(NSDictionary *, NSError *) = ^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+        if (error) {
+            [self handleDropboxError:error message:@"Couldn't upload file"];
+        } else if (fabs([uploadStartDate timeIntervalSinceNow]) > 30.0) {
+            // If it took more than 30 seconds to upload, notify the user that the upload has completed.
+            NSUserNotification *const notification = [[NSUserNotification alloc] init];
+            notification.title = @"Upload complete";
+            notification.subtitle = filename;
+            if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
+                notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+            }
+            dispatch_async(dispatch_get_main_queue(), ^{
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
-            }
-        }];
+            });
+        }
+    };
+    if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
+        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+            // TODO: Show progress.
+        } completion:completionBlock];
     } else {
         [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
-        } completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-            [self handleDropboxError:error message:@"Couldn't upload file"];
-        }];
+        } completion:completionBlock];
     }
     
     // Copy a short link
