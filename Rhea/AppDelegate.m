@@ -440,33 +440,63 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
     suffix = [suffix substringToIndex:MIN(4, suffix.length)];
     
-    NSString *temporaryPath = nil;
+    dispatch_block_t uploadOriginalFileBlock = ^{
+        [self uploadFileAtPath:path
+                  originalPath:path
+                        suffix:suffix
+                    completion:nil];
+    };
+    
+    BOOL upload = YES;
     if (@available(macOS 10.13.0, *)) {
         const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
         if (imageSource) {
             if (CGImageSourceGetCount(imageSource) == 1 && ![(__bridge NSString *)CGImageSourceGetType(imageSource) isEqualToString:AVFileTypeHEIC]) {
-                NSMutableData *destinationData = [NSMutableData new];
-                CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)destinationData, (__bridge CFStringRef)AVFileTypeHEIC, 1, NULL);
-                if (destination) {
-                    NSDictionary *options = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(1.0)};
-                    CGImageDestinationAddImageFromSource(destination, imageSource, 0, (__bridge CFDictionaryRef)options);
-                    CGImageDestinationFinalize(destination);
-                    
-                    if (destinationData.length > 0 && destinationData.length < data.length) {
-                        temporaryPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", [[NSUUID UUID] UUIDString]]];
-                        [destinationData writeToFile:temporaryPath atomically:YES];
+                // Attemp to transcode asynchronously.
+                CFRetain(imageSource);
+                dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+                    NSMutableData *destinationData = [NSMutableData new];
+                    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)destinationData, (__bridge CFStringRef)AVFileTypeHEIC, 1, NULL);
+                    if (destination) {
+                        NSDictionary *options = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(1.0)};
+                        CGImageDestinationAddImageFromSource(destination, imageSource, 0, (__bridge CFDictionaryRef)options);
+                        CGImageDestinationFinalize(destination);
+                        
+                        if (destinationData.length > 0 && destinationData.length < data.length) {
+                            NSString *const temporaryPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", [[NSUUID UUID] UUIDString]]];
+                            [destinationData writeToFile:temporaryPath atomically:YES];
+                            dispatch_async(dispatch_get_main_queue(), ^{
+                                [self uploadFileAtPath:temporaryPath
+                                          originalPath:path
+                                                suffix:suffix
+                                            completion:^{
+                                                [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:nil];
+                                            }];
+                            });
+                        } else {
+                            dispatch_async(dispatch_get_main_queue(), uploadOriginalFileBlock);
+                        }
+                        CFRelease(destination);
+                        CFRelease(imageSource);
                     }
-                    CFRelease(destination);
-                }
+                });
+                upload = NO;
             }
             CFRelease(imageSource);
         }
     }
     
-    NSString *const uploadPath = temporaryPath ?: path;
-    // Original file's filename.
-    NSString *const filename = [[[NSURL fileURLWithPath:path] URLByDeletingPathExtension] lastPathComponent];
-    // Uploaded file's extension.
+    if (upload) {
+        uploadOriginalFileBlock();
+    }
+}
+
+- (void)uploadFileAtPath:(NSString *const)uploadPath // uploadPath is the path of the file to be upload (might've been transcoded from original)
+            originalPath:(NSString *const)originalPath // originalPath is the path of the original input file
+                  suffix:(NSString *const)suffix // suffix is the hash appended to the file, it's derived from the original file
+              completion:(dispatch_block_t)completion // completion executed at end of upload / failure
+{
+    NSString *const filename = [[[NSURL fileURLWithPath:originalPath] URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [[NSURL fileURLWithPath:uploadPath] pathExtension];
     
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
@@ -482,7 +512,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             notification.title = @"Upload complete";
             notification.subtitle = filename;
             if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+                notification.contentImage = [[NSImage alloc] initWithContentsOfFile:originalPath];
             }
             dispatch_async(dispatch_get_main_queue(), ^{
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
@@ -490,9 +520,9 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
             });
-            if (temporaryPath) {
-                [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:nil];
-            }
+        }
+        if (completion) {
+            completion();
         }
     };
     
@@ -521,7 +551,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 notification.subtitle = filename;
                 notification.informativeText = urlString;
                 if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                    notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+                    notification.contentImage = [[NSImage alloc] initWithContentsOfFile:originalPath];
                 }
                 notification.hasActionButton = YES;
                 notification.actionButtonTitle = @"View";
@@ -535,7 +565,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             } else {
                 NSAlert *const alert = [[NSAlert alloc] init];
                 alert.messageText = @"Couldn't copy link";
-                alert.informativeText = path;
+                alert.informativeText = originalPath;
                 [alert runModal];
             }
         });
