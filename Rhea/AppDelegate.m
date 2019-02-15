@@ -16,6 +16,7 @@
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
 
+#import <AVFoundation/AVMediaFormat.h>
 #import <CommonCrypto/CommonDigest.h>
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
@@ -430,10 +431,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)uploadFileAtPath:(NSString *const)path
 {
-    NSURL *const fileURL = [NSURL fileURLWithPath:path];
-    NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
-    NSString *const extension = [fileURL pathExtension];
-    
     // Append first 4 non-special characters of the base 64 MD5 hash of the file contents to it.
     // Better than random because repeated uploads won't be stored multiple times.
     unsigned char result[CC_MD5_DIGEST_LENGTH];
@@ -443,11 +440,37 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
     suffix = [suffix substringToIndex:MIN(4, suffix.length)];
     
+    NSString *temporaryPath = nil;
+    if (@available(macOS 10.13.0, *)) {
+        const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
+        if (imageSource) {
+            if (CGImageSourceGetCount(imageSource) == 1 && ![(__bridge NSString *)CGImageSourceGetType(imageSource) isEqualToString:AVFileTypeHEIC]) {
+                NSMutableData *destinationData = [NSMutableData new];
+                CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)destinationData, (__bridge CFStringRef)AVFileTypeHEIC, 1, NULL);
+                if (destination) {
+                    NSDictionary *options = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(1.0)};
+                    CGImageDestinationAddImageFromSource(destination, imageSource, 0, (__bridge CFDictionaryRef)options);
+                    CGImageDestinationFinalize(destination);
+                    
+                    if (destinationData.length > 0 && destinationData.length < data.length) {
+                        temporaryPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", [[NSUUID UUID] UUIDString]]];
+                        [destinationData writeToFile:temporaryPath atomically:YES];
+                    }
+                    CFRelease(destination);
+                }
+            }
+            CFRelease(imageSource);
+        }
+    }
+    
+    NSString *const uploadPath = temporaryPath ?: path;
+    // Original file's filename.
+    NSString *const filename = [[[NSURL fileURLWithPath:path] URLByDeletingPathExtension] lastPathComponent];
+    // Uploaded file's extension.
+    NSString *const extension = [[NSURL fileURLWithPath:uploadPath] pathExtension];
+    
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
-    
-    // Begin uploading the file
-    unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil][NSFileSize] unsignedLongLongValue];
     
     NSDate *const uploadStartDate = [NSDate date];
     void (^completionBlock)(NSDictionary *, NSError *) = ^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
@@ -467,14 +490,22 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
                 });
             });
+            if (temporaryPath) {
+                [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:nil];
+            }
         }
     };
+    
+    // Begin uploading the file
+    unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:uploadPath error:nil][NSFileSize] unsignedLongLongValue];
+    
+    
     if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
-        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadLargeFileAtPath:uploadPath toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     } else {
-        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadFileAtPath:uploadPath toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     }
