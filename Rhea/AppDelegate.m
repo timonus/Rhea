@@ -447,47 +447,91 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     completion:nil];
     };
     
-    BOOL upload = YES;
-    if (@available(macOS 10.13.0, *)) {
-        const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
-        if (imageSource) {
-            if (CGImageSourceGetCount(imageSource) == 1 && ![(__bridge NSString *)CGImageSourceGetType(imageSource) isEqualToString:AVFileTypeHEIC]) {
-                // Attemp to transcode asynchronously.
-                CFRetain(imageSource);
-                dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
-                    NSMutableData *destinationData = [NSMutableData new];
-                    CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)destinationData, (__bridge CFStringRef)AVFileTypeHEIC, 1, NULL);
-                    if (destination) {
-                        NSDictionary *options = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(1.0)};
-                        CGImageDestinationAddImageFromSource(destination, imageSource, 0, (__bridge CFDictionaryRef)options);
-                        CGImageDestinationFinalize(destination);
-                        
-                        if (destinationData.length > 0 && destinationData.length < data.length) {
-                            NSString *const temporaryPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.heic", [[NSUUID UUID] UUIDString]]];
-                            [destinationData writeToFile:temporaryPath atomically:YES];
-                            dispatch_async(dispatch_get_main_queue(), ^{
-                                [self uploadFileAtPath:temporaryPath
-                                          originalPath:path
-                                                suffix:suffix
-                                            completion:^{
-                                                [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:nil];
-                                            }];
-                            });
-                        } else {
-                            dispatch_async(dispatch_get_main_queue(), uploadOriginalFileBlock);
-                        }
-                        CFRelease(destination);
-                        CFRelease(imageSource);
-                    }
-                });
-                upload = NO;
+    BOOL attemptHEICTranscode = NO;
+    BOOL attemptJPEGTranscode = NO;
+    
+    const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
+    if (imageSource) {
+        if (CGImageSourceGetCount(imageSource) == 1) {
+            attemptHEICTranscode = YES; // Could be based on NSUserDefaults ulitmately.
+            attemptJPEGTranscode = YES; // Could be based on NSUserDefaults ulitmately.
+            
+            NSString *const imageType = (__bridge NSString *)CGImageSourceGetType(imageSource);
+            BOOL isHEIC = NO;
+            if (@available(macOS 10.13.0, *)) {
+                isHEIC = [imageType isEqualToString:AVFileTypeHEIC];
             }
-            CFRelease(imageSource);
+            if (isHEIC) {
+                attemptHEICTranscode = NO;
+                attemptJPEGTranscode = NO;
+            } else {
+                CGImageRef image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil);
+                if (image) {
+                    if (CGImageGetAlphaInfo(image) != kCGImageAlphaNone) {
+                        attemptJPEGTranscode = NO;
+                    }
+                    CGImageRelease(image);
+                } else {
+                    attemptJPEGTranscode = NO;
+                }
+            }
         }
     }
     
-    if (upload) {
+    if (attemptHEICTranscode || attemptJPEGTranscode) {
+        // Attemp to transcode asynchronously.
+        CFRetain(imageSource);
+        dispatch_async(dispatch_get_global_queue(QOS_CLASS_DEFAULT, 0), ^{
+            CFStringRef fileType;
+            NSString *extension = nil;
+            if (attemptHEICTranscode) {
+                if (@available(macOS 13.0, *)) {
+                    fileType = (CFStringRef)AVFileTypeHEIC;
+                } else {
+                    NSAssert(NO, @"Should not be reached");
+                }
+                extension = @"heic";
+            } else if (attemptJPEGTranscode) {
+                if (@available(macOS 13.0, *)) {
+                    fileType = (CFStringRef)AVFileTypeJPEG;
+                } else {
+                    fileType = (__bridge CFStringRef)@"public.jpeg";
+                }
+                extension = @"jpeg";
+            } else {
+                NSAssert(NO, @"Should not be reached");
+            }
+            NSMutableData *destinationData = [NSMutableData new];
+            CGImageDestinationRef destination = CGImageDestinationCreateWithData((__bridge CFMutableDataRef)destinationData, fileType, 1, NULL);
+            if (destination) {
+                NSDictionary *options = @{(__bridge NSString *)kCGImageDestinationLossyCompressionQuality: @(1.0)};
+                CGImageDestinationAddImageFromSource(destination, imageSource, 0, (__bridge CFDictionaryRef)options);
+                CGImageDestinationFinalize(destination);
+                
+                if (destinationData.length > 0 && destinationData.length < data.length) {
+                    NSString *const temporaryPath = [NSTemporaryDirectory() stringByAppendingPathComponent:[NSString stringWithFormat:@"%@.%@", [[NSUUID UUID] UUIDString], extension]];
+                    [destinationData writeToFile:temporaryPath atomically:YES];
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [self uploadFileAtPath:temporaryPath
+                                  originalPath:path
+                                        suffix:suffix
+                                    completion:^{
+                                        [[NSFileManager defaultManager] removeItemAtPath:temporaryPath error:nil];
+                                    }];
+                    });
+                } else {
+                    dispatch_async(dispatch_get_main_queue(), uploadOriginalFileBlock);
+                }
+                CFRelease(destination);
+                CFRelease(imageSource);
+            }
+        });
+    } else {
         uploadOriginalFileBlock();
+        
+        if (imageSource) {
+            CFRelease(imageSource);
+        }
     }
 }
 
