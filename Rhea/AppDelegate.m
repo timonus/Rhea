@@ -512,14 +512,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             CFStringRef fileType;
             NSString *extension = nil;
             if (attemptHEICTranscode) {
-                if (@available(macOS 13.0, *)) {
+                if (@available(macOS 10.13.0, *)) {
                     fileType = (CFStringRef)AVFileTypeHEIC;
                 } else {
                     NSAssert(NO, @"Should not be reached");
                 }
                 extension = @"heic";
             } else if (attemptJPEGTranscode) {
-                if (@available(macOS 13.0, *)) {
+                if (@available(macOS 10.13.0, *)) {
                     fileType = (CFStringRef)AVFileTypeJPEG;
                 } else {
                     fileType = (__bridge CFStringRef)@"public.jpeg";
