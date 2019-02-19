@@ -491,15 +491,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 attemptHEICTranscode = NO;
                 attemptJPEGTranscode = NO;
             } else {
-                CGImageRef image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil);
-                if (image) {
-                    if (CGImageGetAlphaInfo(image) != kCGImageAlphaNone) {
-                        attemptJPEGTranscode = NO;
-                    }
-                    CGImageRelease(image);
-                } else {
-                    attemptJPEGTranscode = NO;
-                }
+#warning Warning -- this will currently drop alpha info when transcoding to JPEG!
+//                CGImageRef image = CGImageSourceCreateImageAtIndex(imageSource, 0, nil);
+//                if (image) {
+//                    if (CGImageGetAlphaInfo(image) != kCGImageAlphaNone) {
+//                        attemptJPEGTranscode = NO;
+//                    }
+//                    CGImageRelease(image);
+//                } else {
+//                    attemptJPEGTranscode = NO;
+//                }
             }
         }
     }
