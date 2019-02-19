@@ -32,6 +32,9 @@ static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 static NSString *const kRHEABitlyAccountKey = @"com.tijo.Rhea.Service.Bitly";
 static NSString *const kRHEABitlyRedirectURLString = @"rhea-bitly-auth://bitlyauth";
 
+static NSString *const kRHEAHEICTranscodeSettingKey = @"com.tijo.Rhea.transcode.heic";
+static NSString *const kRHEAJPEGTranscodeSettingKey = @"com.tijo.Rhea.transcode.jpeg";
+
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
 static NSString *const kRHEARecentActionTitleKey = @"title";
@@ -176,8 +179,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
     [menu addItem:[NSMenuItem separatorItem]];
     
-    
-    NSMenuItem *const accountsItem = [[NSMenuItem alloc] initWithTitle:@"Accounts" action:nil keyEquivalent:@""];
+    NSMenuItem *const accountsItem = [[NSMenuItem alloc] initWithTitle:@"Settings" action:nil keyEquivalent:@""];
     NSMenu *const accountsMenu = [[NSMenu alloc] init];
     
     NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
@@ -208,6 +210,20 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     } else {
         [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign in to Bitly" action:@selector(authenticateBitlyMenuItemClicked:) keyEquivalent:@""]];
     }
+    
+    [menu addItem:[NSMenuItem separatorItem]];
+    
+    titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Transcoding" action:nil keyEquivalent:@""];
+    titleMenuItem.enabled = NO;
+    [accountsMenu addItem:titleMenuItem];
+    if (@available(macOS 10.13.0, *)) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"Transcode images to HEIC" action:@selector(heicMenuItemClicked:) keyEquivalent:@""];
+        item.state = [[NSUserDefaults standardUserDefaults] boolForKey:kRHEAHEICTranscodeSettingKey] ? NSOnState : NSOffState;
+        [accountsMenu addItem:item];
+    }
+    NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:@"Transcode images to JPEG" action:@selector(jpegMenuItemClicked:) keyEquivalent:@""];
+    item.state = [[NSUserDefaults standardUserDefaults] boolForKey:kRHEAJPEGTranscodeSettingKey] ? NSOnState : NSOffState;
+    [accountsMenu addItem:item];
     
     accountsItem.submenu = accountsMenu;
     [menu addItem:accountsItem];
@@ -243,6 +259,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 - (void)signOutBitlyAccountMenuItemClicked:(id)sender
 {
     [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
+}
+
+- (void)heicMenuItemClicked:(id)sender
+{
+    [[NSUserDefaults standardUserDefaults] setBool:![[NSUserDefaults standardUserDefaults] boolForKey:kRHEAHEICTranscodeSettingKey] forKey:kRHEAHEICTranscodeSettingKey];
+}
+
+- (void)jpegMenuItemClicked:(id)sender
+{
+    [[NSUserDefaults standardUserDefaults] setBool:![[NSUserDefaults standardUserDefaults] boolForKey:kRHEAJPEGTranscodeSettingKey] forKey:kRHEAJPEGTranscodeSettingKey];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -453,8 +479,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
     if (imageSource) {
         if (CGImageSourceGetCount(imageSource) == 1) {
-            attemptHEICTranscode = YES; // Could be based on NSUserDefaults ulitmately.
-            attemptJPEGTranscode = YES; // Could be based on NSUserDefaults ulitmately.
+            attemptHEICTranscode = [[NSUserDefaults standardUserDefaults] boolForKey:kRHEAHEICTranscodeSettingKey];
+            attemptJPEGTranscode = [[NSUserDefaults standardUserDefaults] boolForKey:kRHEAJPEGTranscodeSettingKey];
             
             NSString *const imageType = (__bridge NSString *)CGImageSourceGetType(imageSource);
             BOOL isHEIC = NO;
