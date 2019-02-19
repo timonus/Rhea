@@ -476,6 +476,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     BOOL attemptHEICTranscode = NO;
     BOOL attemptJPEGTranscode = NO;
     
+    static NSString *jpegFileType;
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        if (@available(macOS 10.13.0, *)) {
+            jpegFileType = AVFileTypeJPEG;
+        } else {
+            jpegFileType = @"public.jpeg";
+        }
+    });
+    
     const CGImageSourceRef imageSource = CGImageSourceCreateWithData((__bridge CFDataRef)data, nil);
     if (imageSource) {
         if (CGImageSourceGetCount(imageSource) == 1) {
@@ -489,6 +499,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
             if (isHEIC) {
                 attemptHEICTranscode = NO;
+                attemptJPEGTranscode = NO;
+            } else if ([imageType isEqualToString:jpegFileType]) {
                 attemptJPEGTranscode = NO;
             } else {
 #warning Warning -- this will currently drop alpha info when transcoding to JPEG!
@@ -519,11 +531,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 }
                 extension = @"heic";
             } else if (attemptJPEGTranscode) {
-                if (@available(macOS 10.13.0, *)) {
-                    fileType = (CFStringRef)AVFileTypeJPEG;
-                } else {
-                    fileType = (__bridge CFStringRef)@"public.jpeg";
-                }
+                fileType = (__bridge CFStringRef)jpegFileType;
                 extension = @"jpeg";
             } else {
                 NSAssert(NO, @"Should not be reached");
