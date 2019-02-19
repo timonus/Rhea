@@ -211,7 +211,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign in to Bitly" action:@selector(authenticateBitlyMenuItemClicked:) keyEquivalent:@""]];
     }
     
-    [menu addItem:[NSMenuItem separatorItem]];
+    [accountsMenu addItem:[NSMenuItem separatorItem]];
     
     titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Transcoding" action:nil keyEquivalent:@""];
     titleMenuItem.enabled = NO;
