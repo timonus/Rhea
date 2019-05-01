@@ -470,11 +470,11 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     };
     if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
-        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     } else {
-        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     }
