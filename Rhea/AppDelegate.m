@@ -610,7 +610,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil) {
         [RHEABitlyClient shortenURL:url accessToken:[SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] completion:completion];
     } else {
-        // TODO: Alert.
+        NSAlert *const alert = [[NSAlert alloc] init];
+        alert.messageText = @"Bitly account needed";
+        alert.informativeText = @"You must log in to a Bitly account to shorten links.";
+        NSString *const logInButtonTitle = @"Log in to Bitly";
+        [alert addButtonWithTitle:logInButtonTitle];
+        [alert addButtonWithTitle:@"Dismiss"];
+        const NSModalResponse response = [alert runModal];
+        if (response == NSAlertFirstButtonReturn) {
+            [self authenticateBitlyMenuItemClicked:nil];
+        }
     }
 }
 
