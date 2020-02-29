@@ -116,11 +116,11 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                              clientIdentifier:[[self class] _bitlyClientIdentifier]
                                  clientSecret:[[self class] _bitlyClientSecret]
                                   redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
-                                   completion:^(NSString * _Nullable accessToken) {
+                                   completion:^(NSString *accessToken, NSString *groupIdentifier) {
                                        NSString *message = nil;
-                                       if (accessToken) {
+                                       if (accessToken && groupIdentifier) {
                                            message = @"Logged in to Bitly!";
-                                           [SAMKeychain setPassword:accessToken forService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
+                                           [SAMKeychain setPassword:[NSString stringWithFormat:@"%@ %@", groupIdentifier, accessToken] forService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
                                        } else {
                                            message = @"Unable to log into Bitly";
                                        }
@@ -607,9 +607,19 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             [alert runModal];
         }
     };
-    if ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil) {
-        [RHEABitlyClient shortenURL:url accessToken:[SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] completion:completion];
+    NSString *const credentials = [SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
+    NSArray<NSString *> *const components = [credentials componentsSeparatedByString:@" "];
+    if (components.count == 2) {
+        NSString *const groupIdentifier = components.firstObject;
+        NSString *const accessToken = components.lastObject;
+        [RHEABitlyClient shortenURL:url
+                    groupIdentifier:groupIdentifier
+                        accessToken:accessToken
+                         completion:completion];
     } else {
+        if (credentials) {
+            [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
+        }
         NSAlert *const alert = [[NSAlert alloc] init];
         alert.messageText = @"Bitly account needed";
         alert.informativeText = @"You must log in to a Bitly account to shorten links.";

@@ -19,10 +19,13 @@ NS_ASSUME_NONNULL_BEGIN
             clientIdentifier:(NSString *const)clientIdentifier
                 clientSecret:(NSString *const)clientSecret
                  redirectURL:(NSURL *const)redirectURL
-                  completion:(void (^)(NSString *_Nullable accessToken))completion;
+                  completion:(void (^)(NSString *_Nullable accessToken, NSString *_Nullable groupIdentifier))completion;
 
 // Shortening
-+ (void)shortenURL:(NSURL *const)url accessToken:(NSString *const)accessToken completion:(void (^)(NSURL *_Nullable shortenedURL))completion;
++ (void)shortenURL:(NSURL *const)url
+   groupIdentifier:(NSString *const)groupIdentifier
+       accessToken:(NSString *const)accessToken
+        completion:(void (^)(NSURL *_Nullable shortenedURL))completion;
 
 @end
 

@@ -37,7 +37,7 @@
             clientIdentifier:(NSString *const)clientIdentifier
                 clientSecret:(NSString *const)clientSecret
                  redirectURL:(NSURL *const)redirectURL
-                  completion:(void (^)(NSString *accessToken))completion
+                  completion:(void (^)(NSString *accessToken, NSString *groupIdentifier))completion
 {
     NSMutableURLRequest *const request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://api-ssl.bitly.com/oauth/access_token"]];
     request.HTTPMethod = @"POST";
@@ -63,29 +63,57 @@
                 }
             }
         }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            completion(accessToken);
-        });
+        if (accessToken) {
+            
+            // TODO: Make Rhea Bitly group-aware.
+            // Right now we implicitly always select the first group.
+            
+            NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://api-ssl.bitly.com/v4/groups"] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:5.0];
+            [request setValue:[NSString stringWithFormat:@"Bearer %@", accessToken] forHTTPHeaderField:@"Authorization"];
+            [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+                NSString *groupIdentifier = nil;
+                if (data.length > 0) {
+                    id resultObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
+                    if ([resultObject isKindOfClass:[NSDictionary class]] && [resultObject[@"groups"] isKindOfClass:[NSArray class]] && [resultObject[@"groups"] count] > 0) {
+                        groupIdentifier = [[resultObject[@"groups"] firstObject] objectForKey:@"guid"];
+                    }
+                }
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    completion(accessToken, groupIdentifier);
+                });
+            }] resume];
+        } else {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                completion(nil, nil);
+            });
+        }
     }] resume];
 }
 
-+ (void)shortenURL:(NSURL *const)url accessToken:(NSString *const)accessToken completion:(void (^)(NSURL *_Nullable shortenedURL))completion
++ (void)shortenURL:(NSURL *const)url
+   groupIdentifier:(NSString *const)groupIdentifier
+       accessToken:(NSString *const)accessToken
+        completion:(void (^)(NSURL *_Nullable shortenedURL))completion
 {
-    NSURLComponents *const components = [[NSURLComponents alloc] initWithString:@"https://api-ssl.bitly.com/v3/shorten"];
-    components.queryItems = @[
-                              [NSURLQueryItem queryItemWithName:@"access_token" value:accessToken],
-                              [NSURLQueryItem queryItemWithName:@"longUrl" value:url.absoluteString]
-                              ];
-    [[[NSURLSession sharedSession] dataTaskWithURL:components.URL completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
-        NSString *urlString = nil;
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:@"https://api-ssl.bitly.com/v4/shorten"] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:5.0];
+    [request setValue:[NSString stringWithFormat:@"Bearer %@", accessToken] forHTTPHeaderField:@"Authorization"];
+    [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
+    [request setHTTPBody:[NSJSONSerialization dataWithJSONObject:@{
+        @"group_guid": groupIdentifier,
+        @"long_url": url.absoluteString
+    } options:0 error:nil]];
+    [request setHTTPMethod:@"POST"];
+    
+    [[[NSURLSession sharedSession] dataTaskWithRequest:request completionHandler:^(NSData *data, NSURLResponse *response, NSError *error) {
+        NSURL *result = nil;
         if (data.length > 0) {
             id resultObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-            if ([resultObject isKindOfClass:[NSDictionary class]] && [resultObject[@"data"] isKindOfClass:[NSDictionary class]]) {
-                urlString = [resultObject[@"data"][@"url"] stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"];
+            if ([resultObject isKindOfClass:[NSDictionary class]] && [resultObject[@"link"] isKindOfClass:[NSString class]]) {
+                result = [NSURL URLWithString:[resultObject[@"link"] stringByReplacingOccurrencesOfString:@"http://" withString:@"https://"]];
             }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-            completion([NSURL URLWithString:urlString]);
+            completion(result);
         });
     }] resume];
 }
