@@ -11,7 +11,6 @@
 #import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
 #import "RHEABitlyClient.h"
-#import "RHEAGoogleClient.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
@@ -611,7 +610,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil) {
         [RHEABitlyClient shortenURL:url accessToken:[SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] completion:completion];
     } else {
-        [RHEAGoogleClient shortenURL:url completion:completion];
+        // TODO: Alert.
     }
 }
 
