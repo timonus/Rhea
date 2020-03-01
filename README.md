@@ -2,7 +2,7 @@
 
 [![](https://dl.dropboxusercontent.com/s/ic4r48xv2ru5r3l/4ba5c0bcdbdf7d79eb87a72f42f16f72-12wH.jpg?dl=0)](https://en.wikipedia.org/wiki/Rhea_(moon))
 
-Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to [CloudApp](https://www.getcloudapp.com/) and [Dropshare](https://getdropsha.re/). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and [Bitly](https://dev.bitly.com) for shortening links.
+Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to [CloudApp](https://www.getcloudapp.com/) and [Dropshare](https://dropshare.app). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and [Bitly](https://dev.bitly.com) for shortening links.
 
 ## File Upload
 
