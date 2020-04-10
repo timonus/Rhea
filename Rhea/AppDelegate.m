@@ -479,7 +479,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
     
     // Copy a short link
-    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeShort uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
@@ -526,7 +526,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }];
     
     // Copy a short link
-    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeShort uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];

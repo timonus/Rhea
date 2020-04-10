@@ -14,10 +14,10 @@ Or, if you have a file path or file URL copied to your clipboard you can upload 
 
 ![](https://dl.dropboxusercontent.com/s/ae44aa9z4p9a3ig/2-bxlw.gif?dl=0)
 
-Dropbox short links (db.tt) are copied to the clipboard while files are being uploaded in the background, so it’s very quick.
+Dropbox links are copied to the clipboard while files are being uploaded in the background, so it’s very quick.
 
 ### Technical Notes
-- The API one uses to copy a short link while an upload is occurring is deprecated by Dropbox. May have to move to another endpoint at some point.
+- The API one uses to copy a link while an upload is occurring is deprecated by Dropbox. May have to move to another endpoint at some point.
 - A 4-character base 62 suffix is appended to all uploaded files to avoid filename conflicts. This suffix is consistent for a given file's contents, so repeat uploads of the same file with the same filename act as no-ops.
 - It is recommended that you use Dropbox’s [selective sync](https://www.dropbox.com/en/help/175) feature to disable the Rhea directory from being synched to your Mac.
 
