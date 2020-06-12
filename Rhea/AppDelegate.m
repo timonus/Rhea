@@ -61,7 +61,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType, NSStringPboardType]];
     self.statusItem.button.window.delegate = self;
     
-    NSMenu *const menu = [[NSMenu alloc] init];
+    NSMenu *const menu = [NSMenu new];
     menu.delegate = self;
     self.statusItem.menu = menu;
     
@@ -106,7 +106,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 message = @"Unable to log into Dropbox";
             }
             dispatch_async(dispatch_get_main_queue(), ^{
-                NSAlert *const alert = [[NSAlert alloc] init];
+                NSAlert *const alert = [NSAlert new];
                 alert.messageText = message;
                 [alert runModal];
             });
@@ -125,7 +125,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                                            message = @"Unable to log into Bitly";
                                        }
                                        dispatch_async(dispatch_get_main_queue(), ^{
-                                           NSAlert *const alert = [[NSAlert alloc] init];
+                                           NSAlert *const alert = [NSAlert new];
                                            alert.messageText = message;
                                            [alert runModal];
                                        });
@@ -144,7 +144,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [menu removeAllItems];
     
     NSMenuItem *recentsItem = [[NSMenuItem alloc] initWithTitle:@"Recents" action:nil keyEquivalent:@""];
-    NSMenu *recentsMenu = [[NSMenu alloc] init];
+    NSMenu *recentsMenu = [NSMenu new];
     recentsItem.submenu = recentsMenu;
     if (self.recentActions.count == 0) {
         NSMenuItem *noRecentsItem = [[NSMenuItem alloc] initWithTitle:@"No Recents" action:nil keyEquivalent:@""];
@@ -176,7 +176,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     
     NSMenuItem *const accountsItem = [[NSMenuItem alloc] initWithTitle:@"Accounts" action:nil keyEquivalent:@""];
-    NSMenu *const accountsMenu = [[NSMenu alloc] init];
+    NSMenu *const accountsMenu = [NSMenu new];
     
     NSMenuItem *titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Dropbox Accounts" action:nil keyEquivalent:@""];
     titleMenuItem.enabled = NO;
@@ -454,7 +454,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             [self handleDropboxError:error message:@"Couldn't upload file"];
         } else if (fabs([uploadStartDate timeIntervalSinceNow]) > 30.0) {
             // If it took more than 30 seconds to upload, notify the user that the upload has completed.
-            NSUserNotification *const notification = [[NSUserNotification alloc] init];
+            NSUserNotification *const notification = [NSUserNotification new];
             notification.title = @"Upload complete";
             notification.subtitle = filename;
             if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
@@ -484,7 +484,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
                 
-                NSUserNotification *const notification = [[NSUserNotification alloc] init];
+                NSUserNotification *const notification = [NSUserNotification new];
                 notification.title = @"Copied file link";
                 notification.subtitle = filename;
                 notification.informativeText = urlString;
@@ -501,7 +501,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 
                 [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
-                NSAlert *const alert = [[NSAlert alloc] init];
+                NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't copy link";
                 alert.informativeText = path;
                 [alert runModal];
@@ -531,7 +531,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
                 
-                NSUserNotification *const notification = [[NSUserNotification alloc] init];
+                NSUserNotification *const notification = [NSUserNotification new];
                 notification.title = @"Copied file link";
                 notification.subtitle = filename;
                 notification.informativeText = urlString;
@@ -546,7 +546,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 
                 [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
-                NSAlert *const alert = [[NSAlert alloc] init];
+                NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't copy link";
                 alert.informativeText = url.absoluteString;
                 [alert runModal];
@@ -571,7 +571,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         
         if (message) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                NSAlert *const alert = [[NSAlert alloc] init];
+                NSAlert *const alert = [NSAlert new];
                 alert.messageText = message;
                 [alert runModal];
             });
@@ -587,7 +587,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         if (shortenedURL) {
             [self copyStringToPasteboard:shortenedURL.absoluteString];
             
-            NSUserNotification *const notification = [[NSUserNotification alloc] init];
+            NSUserNotification *const notification = [NSUserNotification new];
             notification.title = @"Link shortened";
             notification.subtitle = url.absoluteString;
             notification.informativeText = shortenedURL.absoluteString;
@@ -601,7 +601,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             
             [self addRecentActionWithTitle:[NSString stringWithFormat:@"🔗 %@", [url trimmedUserFacingString]] url:shortenedURL];
         } else {
-            NSAlert *const alert = [[NSAlert alloc] init];
+            NSAlert *const alert = [NSAlert new];
             alert.messageText = @"Couldn't shorten link";
             alert.informativeText = url.absoluteString;
             [alert runModal];
@@ -620,7 +620,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         if (credentials) {
             [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
         }
-        NSAlert *const alert = [[NSAlert alloc] init];
+        NSAlert *const alert = [NSAlert new];
         alert.messageText = @"Bitly account needed";
         alert.informativeText = @"You must log in to a Bitly account to shorten links.";
         NSString *const logInButtonTitle = @"Log in to Bitly";
@@ -659,7 +659,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSString *const urlString = [(NSURL *)action[kRHEARecentActionURLKey] absoluteString];
     [self copyStringToPasteboard:urlString];
     
-    NSUserNotification *const notification = [[NSUserNotification alloc] init];
+    NSUserNotification *const notification = [NSUserNotification new];
     notification.title = @"Copied link";
     notification.subtitle = action[kRHEARecentActionTitleKey];
     notification.informativeText = urlString;
