@@ -260,8 +260,10 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)signOutCurrentDropboxAccountMenuItemClicked:(id)sender
 {
+    [TJDropbox revokeToken:[self dropboxToken] withCallback:^(BOOL success, NSError * _Nullable error) {
+        // no-op
+    }];
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
-    
     [self updateCurrentDropboxAccountInformation];
 }
 
