@@ -43,6 +43,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 @property (nonatomic, strong) NSMutableArray<NSDictionary *> *recentActions;
 
+@property (nonatomic, copy) NSString *codeVerifier;
+
 @end
 
 @implementation AppDelegate
@@ -92,25 +94,47 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 - (void)handleGetURLEvent:(NSAppleEventDescriptor *)event withReplyEvent:(NSAppleEventDescriptor *)replyEvent
 {
     NSURL *const url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
-    NSString *const dropboxToken = [TJDropbox accessTokenFromURL:url withClientIdentifier:[[self class] _dropboxAppKey]];
+    NSString *dropboxCode = nil;
+    for (NSURLQueryItem *const queryItem in [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:YES].queryItems) {
+        if ([queryItem.name isEqualToString:@"code"]) {
+            dropboxCode = queryItem.value;
+            break;
+        }
+    }
     NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
     
-    if (dropboxToken) {
-        [TJDropbox getAccountInformationWithAccessToken:dropboxToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
-            NSString *const email = parsedResponse[@"email"];
-            NSString *message = nil;
-            if (email) {
-                message = @"Logged in to Dropbox!";
-                [SAMKeychain setPassword:dropboxToken forService:kRHEADropboxAccountKey account:email];
+    if (dropboxCode) {
+        [TJDropbox accessTokenFromCode:dropboxCode
+                  withClientIdentifier:[[self class] _dropboxAppKey]
+                          codeVerifier:self.codeVerifier
+                           redirectURL:[TJDropbox defaultTokenAuthenticationRedirectURLWithClientIdentifier:[[self class] _dropboxAppKey]]
+                            completion:^(NSString * _Nullable dropboxToken, NSError * _Nullable error) {
+            if (dropboxToken) {
+                [TJDropbox getAccountInformationWithAccessToken:dropboxToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+                    NSString *const email = parsedResponse[@"email"];
+                    NSString *message = nil;
+                    if (email) {
+                        message = @"Logged in to Dropbox!";
+                        [SAMKeychain setPassword:dropboxToken forService:kRHEADropboxAccountKey account:email];
+                    } else {
+                        message = @"Unable to log into Dropbox";
+                    }
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSAlert *const alert = [NSAlert new];
+                        alert.messageText = message;
+                        alert.informativeText = email;
+                        [alert runModal];
+                    });
+                }];
             } else {
-                message = @"Unable to log into Dropbox";
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    NSAlert *const alert = [NSAlert new];
+                    alert.messageText = @"Unable to log into Dropbox";
+                    [alert runModal];
+                });
             }
-            dispatch_async(dispatch_get_main_queue(), ^{
-                NSAlert *const alert = [NSAlert new];
-                alert.messageText = message;
-                [alert runModal];
-            });
         }];
+        self.codeVerifier = nil;
     } else if (bitlyCode) {
         [RHEABitlyClient authenticateWithCode:bitlyCode
                              clientIdentifier:[[self class] _bitlyClientIdentifier]
@@ -216,7 +240,10 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)authenticateDropboxMenuItemClicked:(id)sender
 {
-    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey]]];
+    self.codeVerifier = [NSString stringWithFormat:@"%@-%@", [[NSUUID UUID] UUIDString], [[NSUUID UUID] UUIDString]];
+    [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(setCodeVerifier:) object:nil];
+    [self performSelector:@selector(setCodeVerifier:) withObject:nil afterDelay:60.0]; // You have 60 seconds to log in.
+    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:nil codeVerifier:self.codeVerifier]];
 }
 
 - (void)authenticateBitlyMenuItemClicked:(id)sender
