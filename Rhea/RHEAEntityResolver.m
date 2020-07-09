@@ -29,7 +29,7 @@
 + (id)resolvePath:(NSString *const)path
 {
     id result = nil;
-    NSString *const extension = [[NSURL fileURLWithPath:path] pathExtension];
+    NSString *const extension = [[NSURL fileURLWithPath:path isDirectory:NO] pathExtension];
     if ([extension isEqualToString:@"webloc"]) {
         NSDictionary *plist = [NSPropertyListSerialization propertyListWithData:[NSData dataWithContentsOfFile:path] options:0 format:nil error:nil];
         NSURL *const url = [NSURL URLWithString:plist[@"URL"]];

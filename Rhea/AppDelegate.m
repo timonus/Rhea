@@ -458,7 +458,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)uploadFileAtPath:(NSString *const)path
 {
-    NSURL *const fileURL = [NSURL fileURLWithPath:path];
+    NSURL *const fileURL = [NSURL fileURLWithPath:path isDirectory:NO];
     NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [fileURL pathExtension];
     
