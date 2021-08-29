@@ -72,6 +72,21 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // Notifications
     [[NSUserNotificationCenter defaultUserNotificationCenter] setDelegate:self];
     
+    [[NSNotificationCenter defaultCenter] addObserverForName:TJDropboxCredentialDidRefreshAccessTokenNotification
+                                                      object:nil
+                                                       queue:nil
+                                                  usingBlock:^(NSNotification * _Nonnull note) {
+        TJDropboxCredential *const credential = note.object;
+        for (NSDictionary *const keychainAccount in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
+            NSString *const account = keychainAccount[kSAMKeychainAccountKey];
+            TJDropboxCredential *const matchCredential = [[TJDropboxCredential alloc] initWithSerializedStringValue:[SAMKeychain passwordForService:kRHEADropboxAccountKey account:account]
+                                                                                                   clientIdentifier:[[self class] _dropboxAppKey]];
+            if ([matchCredential isEqual:credential]) {
+                [SAMKeychain setPassword:credential.serializedStringValue forService:kRHEADropboxAccountKey account:account];
+                break;
+            }
+        }
+    }];
     [self updateCurrentDropboxAccountInformation];
     
     // Looks janky, but this touches the keychain entries we'll need to access prior to the menu being clicked.
@@ -104,18 +119,18 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
     
     if (dropboxCode) {
-        [TJDropbox accessTokenFromCode:dropboxCode
+        [TJDropbox credentialFromCode:dropboxCode
                   withClientIdentifier:[[self class] _dropboxAppKey]
                           codeVerifier:self.codeVerifier
                            redirectURL:[TJDropbox defaultTokenAuthenticationRedirectURLWithClientIdentifier:[[self class] _dropboxAppKey]]
-                            completion:^(NSString * _Nullable dropboxToken, NSError * _Nullable error) {
-            if (dropboxToken) {
-                [TJDropbox getAccountInformationWithAccessToken:dropboxToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+                           completion:^(TJDropboxCredential * _Nullable credential, NSError * _Nullable error) {
+            if (credential) {
+                [TJDropbox getAccountInformationWithCredential:credential completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
                     NSString *const email = parsedResponse[@"email"];
                     NSString *message = nil;
                     if (email) {
                         message = @"Logged in to Dropbox!";
-                        [SAMKeychain setPassword:dropboxToken forService:kRHEADropboxAccountKey account:email];
+                        [SAMKeychain setPassword:credential.serializedStringValue forService:kRHEADropboxAccountKey account:email];
                     } else {
                         message = @"Unable to log into Dropbox";
                     }
@@ -243,7 +258,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     self.codeVerifier = [NSString stringWithFormat:@"%@-%@", [[NSUUID UUID] UUIDString], [[NSUUID UUID] UUIDString]];
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(setCodeVerifier:) object:nil];
     [self performSelector:@selector(setCodeVerifier:) withObject:nil afterDelay:60.0]; // You have 60 seconds to log in.
-    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:nil codeVerifier:self.codeVerifier]];
+    [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:nil codeVerifier:self.codeVerifier generateRefreshToken:YES]];
 }
 
 - (void)authenticateBitlyMenuItemClicked:(id)sender
@@ -260,7 +275,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)signOutCurrentDropboxAccountMenuItemClicked:(id)sender
 {
-    [TJDropbox revokeToken:[self dropboxToken] withCallback:^(BOOL success, NSError * _Nullable error) {
+    [TJDropbox revokeCredential:[self dropboxCredential] withCallback:^(BOOL success, NSError * _Nullable error) {
         // no-op
     }];
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
@@ -424,10 +439,10 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)updateCurrentDropboxAccountInformation
 {
-    NSString *const currentToken = [self dropboxToken];
+    TJDropboxCredential *const currentCredential = [self dropboxCredential];
     NSString *const currentEmail = [self currentDropboxAccount];
-    if (currentToken && currentEmail) {
-        [TJDropbox getAccountInformationWithAccessToken:currentToken completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+    if (currentCredential && currentEmail) {
+        [TJDropbox getAccountInformationWithCredential:currentCredential completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
             // Check that the account credentials are still valid. If not we need to boot the user out.
             if (error) {
                 [self handleDropboxError:error message:nil];
@@ -443,7 +458,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     
                     // Update the keychain entry
                     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:currentEmail];
-                    [SAMKeychain setPassword:currentToken forService:kRHEADropboxAccountKey account:email];
+                    [SAMKeychain setPassword:currentCredential.serializedStringValue forService:kRHEADropboxAccountKey account:email];
                 }
             }
         }];
@@ -451,9 +466,11 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
 }
 
-- (NSString *)dropboxToken
+- (TJDropboxCredential *)dropboxCredential
 {
-    return [SAMKeychain passwordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
+    NSString *const stringValue = [SAMKeychain passwordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
+    return [[TJDropboxCredential alloc] initWithSerializedStringValue:stringValue
+                                                     clientIdentifier:[[self class] _dropboxAppKey]];
 }
 
 - (void)uploadFileAtPath:(NSString *const)path
@@ -498,17 +515,17 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     };
     if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
-        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES credential:[self dropboxCredential] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     } else {
-        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES accessToken:[self dropboxToken] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES credential:[self dropboxCredential] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     }
     
     // Copy a short link
-    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
@@ -548,14 +565,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
     
     // Copy the file
-    [TJDropbox saveContentsOfURL:url toPath:remotePath accessToken:[self dropboxToken] completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
+    [TJDropbox saveContentsOfURL:url toPath:remotePath credential:[self dropboxCredential] completion:^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         if (error) {
             [self handleDropboxError:error message:@"Couldn't copy file to Dropbox"];
         }
     }];
     
     // Copy a short link
-    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES accessToken:[self dropboxToken] completion:^(NSString * _Nullable urlString) {
+    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
                 [self copyStringToPasteboard:urlString];
