@@ -110,10 +110,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     NSURL *const url = [NSURL URLWithString:[[event paramDescriptorForKeyword:keyDirectObject] stringValue]];
     NSString *dropboxCode = nil;
-    for (NSURLQueryItem *const queryItem in [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:YES].queryItems) {
-        if ([queryItem.name isEqualToString:@"code"]) {
-            dropboxCode = queryItem.value;
-            break;
+    if ([url.absoluteString hasPrefix:@"db-"]) {
+        for (NSURLQueryItem *const queryItem in [NSURLComponents componentsWithURL:url resolvingAgainstBaseURL:YES].queryItems) {
+            if ([queryItem.name isEqualToString:@"code"]) {
+                dropboxCode = queryItem.value;
+                break;
+            }
         }
     }
     NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
