@@ -378,7 +378,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSDragOperation operation = NSDragOperationNone;
     
     if ([resolvedEntity isKindOfClass:[NSURL class]]) {
-        if (([NSEvent modifierFlags] & NSAlternateKeyMask) != 0) {
+        if (([NSEvent modifierFlags] & NSEventModifierFlagOption) != 0) {
             operation = NSDragOperationCopy;
         } else {
             operation = NSDragOperationLink;
@@ -402,7 +402,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     BOOL didHandle = NO;
     
     // 1. See if this is a remote URL we'd like to copy (alt/option key)
-    if ([resolvedEntity isKindOfClass:[NSURL class]] && ([NSEvent modifierFlags] & NSAlternateKeyMask)) {
+    if ([resolvedEntity isKindOfClass:[NSURL class]] && ([NSEvent modifierFlags] & NSEventModifierFlagOption)) {
         [self saveFileAtURL:resolvedEntity];
         didHandle = YES;
     }
