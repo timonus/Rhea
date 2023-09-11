@@ -174,10 +174,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
 }
 
-- (void)applicationWillTerminate:(NSNotification *)aNotification
-{
-}
-
 #pragma mark - Menu Management
 
 - (void)menuWillOpen:(NSMenu *)menu
