@@ -29,9 +29,6 @@
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 
-static NSString *const kRHEABitlyAccountKey = @"com.tijo.Rhea.Service.Bitly";
-static NSString *const kRHEABitlyRedirectURLString = @"rhea-bitly-auth://bitlyauth";
-
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
 static NSString *const kRHEARecentActionTitleKey = @"title";
@@ -120,8 +117,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
         }
     }
-    NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
-    
     if (dropboxCode) {
         [TJDropbox credentialFromCode:dropboxCode
                   withClientIdentifier:[[self class] _dropboxAppKey]
@@ -154,25 +149,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
         }];
         self.codeVerifier = nil;
-    } else if (bitlyCode) {
-        [RHEABitlyClient authenticateWithCode:bitlyCode
-                             clientIdentifier:[[self class] _bitlyClientIdentifier]
-                                 clientSecret:[[self class] _bitlyClientSecret]
-                                  redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
-                                   completion:^(NSString *accessToken, NSString *groupIdentifier) {
-                                       NSString *message = nil;
-                                       if (accessToken && groupIdentifier) {
-                                           message = @"Logged in to Bitly!";
-                                           [SAMKeychain setPassword:[NSString stringWithFormat:@"%@ %@", groupIdentifier, accessToken] forService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-                                       } else {
-                                           message = @"Unable to log into Bitly";
-                                       }
-                                       dispatch_async(dispatch_get_main_queue(), ^{
-                                           NSAlert *const alert = [NSAlert new];
-                                           alert.messageText = message;
-                                           [alert runModal];
-                                       });
-                                   }];
     }
 }
 
@@ -197,7 +173,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     }
     NSString *const currentDropboxAccount = [self currentDropboxAccount];
-    const BOOL signedInToBitly = ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil);
     if (currentDropboxAccount) {
         [recentsMenu addItem:[NSMenuItem separatorItem]];
         [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View more on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
@@ -237,15 +212,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
     [accountsMenu addItem:[NSMenuItem separatorItem]];
     
-    titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Bitly Account" action:nil keyEquivalent:@""];
-    titleMenuItem.enabled = NO;
-    [accountsMenu addItem:titleMenuItem];
-    if (signedInToBitly) {
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign out" action:@selector(signOutBitlyAccountMenuItemClicked:) keyEquivalent:@""]];
-    } else {
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign in to Bitly" action:@selector(authenticateBitlyMenuItemClicked:) keyEquivalent:@""]];
-    }
-    
     accountsItem.submenu = accountsMenu;
     [menu addItem:accountsItem];
     [menu addItem:[NSMenuItem separatorItem]];
@@ -259,11 +225,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(setCodeVerifier:) object:nil];
     [self performSelector:@selector(setCodeVerifier:) withObject:nil afterDelay:60.0]; // You have 60 seconds to log in.
     [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:nil codeVerifier:self.codeVerifier generateRefreshToken:YES]];
-}
-
-- (void)authenticateBitlyMenuItemClicked:(id)sender
-{
-    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:[[self class] _bitlyClientIdentifier] redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]]];
 }
 
 - (void)accountMenuItemSelected:(id)sender
@@ -280,11 +241,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }];
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
     [self updateCurrentDropboxAccountInformation];
-}
-
-- (void)signOutBitlyAccountMenuItemClicked:(id)sender
-{
-    [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -672,30 +628,10 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             [alert runModal];
         }
     };
-    NSString *const credentials = [SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-    NSArray<NSString *> *const components = [credentials componentsSeparatedByString:@" "];
-    if (components.count == 2) {
-        NSString *const groupIdentifier = components.firstObject;
-        NSString *const accessToken = components.lastObject;
-        [RHEABitlyClient shortenURL:url
-                    groupIdentifier:groupIdentifier
-                        accessToken:accessToken
-                         completion:completion];
-    } else {
-        if (credentials) {
-            [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-        }
-        NSAlert *const alert = [NSAlert new];
-        alert.messageText = @"Bitly account needed";
-        alert.informativeText = @"You must log in to a Bitly account to shorten links.";
-        NSString *const logInButtonTitle = @"Log in to Bitly";
-        [alert addButtonWithTitle:logInButtonTitle];
-        [alert addButtonWithTitle:@"Dismiss"];
-        const NSModalResponse response = [alert runModal];
-        if (response == NSAlertFirstButtonReturn) {
-            [self authenticateBitlyMenuItemClicked:nil];
-        }
-    }
+    [RHEABitlyClient shortenURL:url
+//                groupIdentifier:groupIdentifier
+//                    accessToken:accessToken
+                     completion:completion];
 }
 
 #pragma mark - Recents
@@ -766,16 +702,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 + (NSString *)_dropboxAppKey
 {
     return [@"+yfqZhN0d+z1e2Iu6+RwOQ==" decryptedStringWithKey:NSStringFromClass([self class])];
-}
-
-+ (NSString *)_bitlyClientIdentifier
-{
-    return [@"pGZ6IM69ixJIttw364hP59p95Htiyglkm7eScq93U9WGcEj9IuCWhgwKHt6P/Xoh" decryptedStringWithKey:NSStringFromClass([self class])];
-}
-
-+ (NSString *)_bitlyClientSecret
-{
-    return [@"XHcyH4B9HQ4nV0IRAZNNq0htLZbp4JBvs03PafrlzQVbyvSDag0z5Dha26G9wjMR" decryptedStringWithKey:NSStringFromClass([self class])];
 }
 
 @end

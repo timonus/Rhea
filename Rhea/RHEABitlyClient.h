@@ -13,18 +13,18 @@ NS_ASSUME_NONNULL_BEGIN
 @interface RHEABitlyClient : NSObject
 
 // Authentication
-+ (NSURL *)authenticationURLWithClientIdentifier:(NSString *const)clientIdentifier redirectURL:(NSURL *const)redirectURL;
-+ (nullable NSString *)accessCodeFromURL:(NSURL *const)url redirectURL:(NSURL *const)redirectURL;
-+ (void)authenticateWithCode:(NSString *const)code
-            clientIdentifier:(NSString *const)clientIdentifier
-                clientSecret:(NSString *const)clientSecret
-                 redirectURL:(NSURL *const)redirectURL
-                  completion:(void (^)(NSString *_Nullable accessToken, NSString *_Nullable groupIdentifier))completion;
+//+ (NSURL *)authenticationURLWithClientIdentifier:(NSString *const)clientIdentifier redirectURL:(NSURL *const)redirectURL;
+//+ (nullable NSString *)accessCodeFromURL:(NSURL *const)url redirectURL:(NSURL *const)redirectURL;
+//+ (void)authenticateWithCode:(NSString *const)code
+//            clientIdentifier:(NSString *const)clientIdentifier
+//                clientSecret:(NSString *const)clientSecret
+//                 redirectURL:(NSURL *const)redirectURL
+//                  completion:(void (^)(NSString *_Nullable accessToken, NSString *_Nullable groupIdentifier))completion;
 
 // Shortening
 + (void)shortenURL:(NSURL *const)url
-   groupIdentifier:(NSString *const)groupIdentifier
-       accessToken:(NSString *const)accessToken
+//   groupIdentifier:(NSString *const)groupIdentifier
+//       accessToken:(NSString *const)accessToken
         completion:(void (^)(NSURL *_Nullable shortenedURL))completion;
 
 @end
