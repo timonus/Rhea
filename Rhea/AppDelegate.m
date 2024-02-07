@@ -607,12 +607,17 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)shortenURL:(NSURL *const)url
 {
-    void (^completion)(NSURL *shortenedURL) = ^(NSURL *shortenedURL) {
+    void (^completion)(NSURL *shortenedURL, BOOL shortened) = ^(NSURL *shortenedURL, BOOL shortened) {
         if (shortenedURL) {
             [self copyStringToPasteboard:shortenedURL.absoluteString];
             
             NSUserNotification *const notification = [NSUserNotification new];
-            notification.title = @"Link shortened";
+            notification.identifier = url.absoluteString;
+            if (shortened) {
+                notification.title = @"Link shortened";
+            } else {
+                notification.title = @"Copied link";
+            }
             notification.subtitle = url.absoluteString;
             notification.informativeText = [shortenedURL trimmedUserFacingString];
             notification.hasActionButton = YES;
@@ -629,8 +634,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     };
     [RHEABitlyClient shortenURL:url
-//                groupIdentifier:groupIdentifier
-//                    accessToken:accessToken
                      completion:completion];
 }
 
