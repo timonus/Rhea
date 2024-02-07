@@ -562,7 +562,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     NSString *const filename = [[url URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [url pathExtension];
-    NSString *const suffix = [self randomSuffix];
+    
+    // Append first 4 non-special characters of the base 64 SHA224 hash of the file contents to it.
+    // Better than random because repeated uploads won't be stored multiple times.
+    unsigned char result[CC_SHA224_DIGEST_LENGTH];
+    NSData *const data = [url.absoluteString dataUsingEncoding:NSUTF8StringEncoding];
+    CC_SHA224(data.bytes, (CC_LONG)data.length, result);
+    NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
+    suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
+    suffix = [suffix substringToIndex:MIN(4, suffix.length)];
+    
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
     
