@@ -332,6 +332,26 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     return YES;
 }
 
+- (void)userNotificationCenter:(NSUserNotificationCenter *)center didDeliverNotification:(NSUserNotification *)notification
+{
+    const NSTimeInterval kDismissDelay = 5.0;
+    if (notification.identifier) {
+        [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(undeliverNotification:) object:notification.identifier];
+        [self performSelector:@selector(undeliverNotification:) withObject:notification.identifier afterDelay:kDismissDelay];
+    } else {
+        [[NSUserNotificationCenter defaultUserNotificationCenter] performSelector:@selector(removeDeliveredNotification:) withObject:notification afterDelay:kDismissDelay];
+    }
+}
+
+- (void)undeliverNotification:(NSString *)identifier
+{
+    for (NSUserNotification *notification in [[NSUserNotificationCenter defaultUserNotificationCenter] deliveredNotifications]) {
+        if ([notification.identifier isEqualToString:identifier]) {
+            [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
+        }
+    }
+}
+
 #pragma mark - Drag & Drop
 
 - (id)resolveDraggingInfo:(id<NSDraggingInfo>)sender
@@ -490,30 +510,40 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
     suffix = [suffix substringToIndex:MIN(4, suffix.length)];
     
+    __block NSString *fetchedURLString = nil;
+    void (^notificationBlock)(BOOL uploaded) = ^(BOOL uploaded) {
+        NSUserNotification *const notification = [NSUserNotification new];
+        notification.title = @"Copied file link";
+        if (uploaded) {
+            notification.title = @"File uploaded";
+        } else {
+            notification.title = @"Copied file link";
+        }
+        notification.subtitle = filename;
+        notification.informativeText = fetchedURLString;
+        notification.identifier = suffix;
+        if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame || [extension caseInsensitiveCompare:@"heic"] == NSOrderedSame) {
+            notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
+        }
+        notification.hasActionButton = YES;
+        notification.actionButtonTitle = @"View";
+        if (fetchedURLString) {
+            notification.userInfo = @{kRHEANotificationURLStringKey: fetchedURLString};
+        }
+        [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+    };
+    
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
     
     // Begin uploading the file
     unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil][NSFileSize] unsignedLongLongValue];
     
-    NSDate *const uploadStartDate = [NSDate date];
     void (^completionBlock)(NSDictionary *, NSError *) = ^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         if (error) {
             [self handleDropboxError:error message:@"Couldn't upload file"];
-        } else if (fabs([uploadStartDate timeIntervalSinceNow]) > 30.0) {
-            // If it took more than 30 seconds to upload, notify the user that the upload has completed.
-            NSUserNotification *const notification = [NSUserNotification new];
-            notification.title = @"Upload complete";
-            notification.subtitle = filename;
-            if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
-            }
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
-                });
-            });
+        } else {
+            notificationBlock(YES);
         }
     };
     if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
@@ -530,23 +560,9 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (urlString) {
+                fetchedURLString = urlString;
                 [self copyStringToPasteboard:urlString];
-                
-                NSUserNotification *const notification = [NSUserNotification new];
-                notification.title = @"Copied file link";
-                notification.subtitle = filename;
-                notification.informativeText = urlString;
-                if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame) {
-                    notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
-                }
-                notification.hasActionButton = YES;
-                notification.actionButtonTitle = @"View";
-                notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
-                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
-                });
-                
+                notificationBlock(NO);
                 [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [NSAlert new];
@@ -597,9 +613,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 notification.actionButtonTitle = @"View";
                 notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                    [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
-                });
                 
                 [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
             } else {
@@ -652,9 +665,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             notification.actionButtonTitle = @"View";
             notification.userInfo = @{kRHEANotificationURLStringKey: shortenedURL.absoluteString};
             [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
-            });
             
             [self addRecentActionWithTitle:[NSString stringWithFormat:@"🔗 %@", [url trimmedUserFacingString]] url:shortenedURL];
         } else {
@@ -724,9 +734,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     notification.actionButtonTitle = @"View";
     notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
     [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(5.0 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [[NSUserNotificationCenter defaultUserNotificationCenter] removeDeliveredNotification:notification];
-    });
 }
 
 #pragma mark - Utilities
