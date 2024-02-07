@@ -501,12 +501,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [fileURL pathExtension];
     
-    // Append first 4 non-special characters of the base 64 MD5 hash of the file contents to it.
+    // Append first 4 non-special characters of the base 64 SHA224 hash of the file contents to it.
     // Better than random because repeated uploads won't be stored multiple times.
-    unsigned char result[CC_MD5_DIGEST_LENGTH];
+    unsigned char result[CC_SHA224_DIGEST_LENGTH];
     NSData *const data = [NSData dataWithContentsOfFile:path];
-    CC_MD5(data.bytes, (CC_LONG)data.length, result);
-    NSString *suffix = [[NSData dataWithBytes:result length:CC_MD5_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
+    CC_SHA224(data.bytes, (CC_LONG)data.length, result);
+    NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
     suffix = [suffix substringToIndex:MIN(4, suffix.length)];
     
