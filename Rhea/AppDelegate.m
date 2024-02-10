@@ -700,6 +700,13 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)addRecentActionWithTitle:(NSString *const)title url:(NSURL *)url
 {
+    // Don't add duplicates
+    for (NSDictionary *const recentAction in self.recentActions) {
+        if ([recentAction[kRHEARecentActionURLKey] isEqual:url]) {
+            return;
+        }
+    }
+    
     NSDictionary *action = @{
         kRHEARecentActionTitleKey: title,
         kRHEARecentActionURLKey: url
