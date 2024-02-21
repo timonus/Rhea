@@ -16,7 +16,7 @@
     components.host = [components.host stringByReplacingOccurrencesOfString:@"www." withString:@""];
     components.queryItems = nil;
     NSString *string = components.URL.absoluteString;
-    string = [string stringByReplacingOccurrencesOfString:@"http(s)?://" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, string.length)];
+    string = [string stringByReplacingOccurrencesOfString:@"https?://" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, string.length)];
     return string;
 }
 

@@ -516,7 +516,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             notification.title = @"Copied file link";
         }
         notification.subtitle = filename;
-        notification.informativeText = fetchedURLString;
+        notification.informativeText = [[NSURL URLWithString:fetchedURLString] trimmedUserFacingString];
         notification.identifier = suffix;
         if ([extension caseInsensitiveCompare:@"png"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpeg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"jpg"] == NSOrderedSame || [extension caseInsensitiveCompare:@"gif"] == NSOrderedSame || [extension caseInsensitiveCompare:@"heic"] == NSOrderedSame) {
             notification.contentImage = [[NSImage alloc] initWithContentsOfFile:path];
@@ -603,7 +603,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 NSUserNotification *const notification = [NSUserNotification new];
                 notification.title = @"Copied file link";
                 notification.subtitle = filename;
-                notification.informativeText = urlString;
+                notification.informativeText = [[NSURL URLWithString:urlString] trimmedUserFacingString];
                 
                 notification.hasActionButton = YES;
                 notification.actionButtonTitle = @"View";
@@ -656,7 +656,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             NSUserNotification *const notification = [NSUserNotification new];
             notification.title = @"Link shortened";
             notification.subtitle = url.absoluteString;
-            notification.informativeText = shortenedURL.absoluteString;
+            notification.informativeText = [shortenedURL trimmedUserFacingString];
             notification.hasActionButton = YES;
             notification.actionButtonTitle = @"View";
             notification.userInfo = @{kRHEANotificationURLStringKey: shortenedURL.absoluteString};
@@ -726,13 +726,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)copyLinkFromRecentAction:(NSDictionary *)action
 {
-    NSString *const urlString = [(NSURL *)action[kRHEARecentActionURLKey] absoluteString];
+    NSURL *const url = action[kRHEARecentActionURLKey];
+    NSString *const urlString = [url absoluteString];
     [self copyStringToPasteboard:urlString];
     
     NSUserNotification *const notification = [NSUserNotification new];
     notification.title = @"Copied link";
     notification.subtitle = action[kRHEARecentActionTitleKey];
-    notification.informativeText = urlString;
+    notification.informativeText = [url trimmedUserFacingString];
     notification.hasActionButton = YES;
     notification.actionButtonTitle = @"View";
     notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
