@@ -34,7 +34,7 @@
     NSURLComponents *components = [[NSURLComponents alloc] initWithString:@"https://tijo.link"];
     
     unsigned char result[CC_SHA224_DIGEST_LENGTH];
-    NSString *const input = [url.absoluteString stringByAppendingString:@" vUeUXfC*YX4dPibi2iwf.dmv!U-XxcRV2ZgB@ePKN.a3m*gBqiW_QJM!ehHRjEw4FmFhZgiZRGBTVL9!zq7owHx*HvU-QYW8KXL@"]; // TODO: Encrypt
+    NSString *const input = [url.absoluteString stringByAppendingString:[@"zA7+XedL6Tkl0KEvAOorLJdKT33qMcu9Ra8+/BLJNMDL+Fe+aKRQjVSHRFvF/RK0PmmK7VP1d6n7uAlSRpD8F/9WgH/g/knm+4rn8Rsp1KFr6ChqJo6ETv4Tkg2hP2mVFlL54xHeQt3jPOX/qkd8PA==" decryptedStringWithKey:NSStringFromClass([self class])]];
     NSData *const data = [input dataUsingEncoding:NSUTF8StringEncoding];
     CC_SHA224(data.bytes, (CC_LONG)data.length, result);
     NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
