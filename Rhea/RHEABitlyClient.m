@@ -39,7 +39,7 @@
     CC_SHA224(data.bytes, (CC_LONG)data.length, result);
     NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
-    suffix = [suffix substringToIndex:MIN(6, suffix.length)];
+    suffix = [suffix substringToIndex:MIN(4, suffix.length)];
     
     components.path = [@"/" stringByAppendingString:suffix];
     
@@ -108,7 +108,6 @@ static char *const kDataKey = "rheaData";
         NSData *const data = objc_getAssociatedObject(task, kDataKey);
         completion(data, error);
     }
-    
 }
 
 @end
