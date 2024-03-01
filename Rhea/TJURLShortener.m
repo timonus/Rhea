@@ -1,27 +1,42 @@
 //
-//  RHEABitlyClient.m
+//  TJURLShortener.m
 //  Rhea
 //
 //  Created by Tim Johnsen on 4/8/18.
 //  Copyright © 2018 tijo. All rights reserved.
 //
 
-#import "RHEABitlyClient.h"
+#import "TJURLShortener.h"
 #import "NSString+Encryption.h"
 #import <CommonCrypto/CommonDigest.h>
 #import <objc/runtime.h>
 
+static NSString *const kSlugLengthKey = @"_tjus.l";
 
-
-@interface RHEABitlyClient () <NSURLSessionDataDelegate>
+__attribute__((objc_direct_members))
+@interface TJURLShortener () <NSURLSessionDataDelegate>
 
 @end
 
-@implementation RHEABitlyClient
+__attribute__((objc_direct_members))
+@implementation TJURLShortener
+
+NSString *_tjus_key;
+NSString *_tjus_host;
+NSUserDefaults *_tjus_userDefaults;
+
++ (void)configureWithKey:(NSString *const)key
+                    host:(NSString *const)host
+            userDefaults:(NSUserDefaults *const)userDefaults
+{
+    _tjus_key = key;
+    _tjus_host = host;
+    _tjus_userDefaults = userDefaults;
+}
 
 + (instancetype)taskDelegate
 {
-    static RHEABitlyClient *taskDelegate = nil;
+    static TJURLShortener *taskDelegate = nil;
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         taskDelegate = [self new];
@@ -31,30 +46,41 @@
 
 + (NSURL *)expectedShortURLFor:(NSURL *const)url
 {
+    if (_tjus_key == nil) {
+        return nil;
+    }
     NSURLComponents *components = [[NSURLComponents alloc] initWithString:@"https://tijo.link"];
     
     unsigned char result[CC_SHA224_DIGEST_LENGTH];
-    NSString *const input = [url.absoluteString stringByAppendingString:[@"zA7+XedL6Tkl0KEvAOorLJdKT33qMcu9Ra8+/BLJNMDL+Fe+aKRQjVSHRFvF/RK0PmmK7VP1d6n7uAlSRpD8F/9WgH/g/knm+4rn8Rsp1KFr6ChqJo6ETv4Tkg2hP2mVFlL54xHeQt3jPOX/qkd8PA==" decryptedStringWithKey:NSStringFromClass([self class])]];
+    NSString *const input = [url.absoluteString stringByAppendingString:_tjus_key];
     NSData *const data = [input dataUsingEncoding:NSUTF8StringEncoding];
     CC_SHA224(data.bytes, (CC_LONG)data.length, result);
     NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
     suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
-    suffix = [suffix substringToIndex:MIN(4, suffix.length)];
+    const NSUInteger length = MIN(MAX([[_tjus_userDefaults objectForKey:kSlugLengthKey] unsignedIntegerValue] ?: 4, 4), 12);
+    suffix = [suffix substringToIndex:MIN(length, suffix.length)];
     
     components.path = [@"/" stringByAppendingString:suffix];
     
     return components.URL;
 }
 
-static char *const kCompletionKey = "rheaCompletion";
-static char *const kDataKey = "rheaData";
+static char *const kCompletionKey = "_tjus.c";
+static char *const kDataKey = "_tjus.d";
 
 + (void)shortenURL:(NSURL *const)url
         completion:(void (^)(NSURL *_Nullable shortenedURL, BOOL shortened))completion
 {
-    completion([self expectedShortURLFor:url], NO);
+    if (_tjus_host == nil) {
+        completion(nil, YES);
+    }
     
-    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:[@"HTUG2SN0GmdaoZDwK8tIyFDqkxPiG56W7SKUTp6tiUbis57lhjFplTVW7uoIP+M+TCsf7VEBU9TCSaNfX0NSvg==" decryptedStringWithKey:NSStringFromClass([self class])]] cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:5.0];
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        NSURL *const expectedURL = [self expectedShortURLFor:url];
+        completion(expectedURL, NO);
+    });
+    
+    NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:[NSURL URLWithString:_tjus_host]];
     [request setValue:@"application/json" forHTTPHeaderField:@"Content-Type"];
     [request setHTTPBody:[NSJSONSerialization dataWithJSONObject:@{
         @"url_long": url.absoluteString
@@ -76,16 +102,21 @@ static char *const kDataKey = "rheaData";
         NSURL *result = nil;
         if (data.length > 0) {
             id resultObject = [NSJSONSerialization JSONObjectWithData:data options:0 error:nil];
-            if ([resultObject isKindOfClass:[NSDictionary class]] && [resultObject[@"url_short"] isKindOfClass:[NSString class]]) {
-                result = [NSURL URLWithString:resultObject[@"url_short"]];
+            if ([resultObject isKindOfClass:[NSDictionary class]]) {
+                const id resultURL = resultObject[@"url_short"];
+                if ([resultURL isKindOfClass:[NSString class]]) {
+                    result = [NSURL URLWithString:resultURL];
+                }
+                const id resultSlugLength = resultObject[@"l"];
+                if ([resultSlugLength isKindOfClass:[NSNumber class]]) {
+                    [_tjus_userDefaults setObject:resultSlugLength forKey:kSlugLengthKey];
+                }
             }
         }
-        dispatch_async(dispatch_get_main_queue(), ^{
-            completion(result, YES);
-        });
+        completion(result, YES);
     };
     objc_setAssociatedObject(task, kCompletionKey, taskCompletion, OBJC_ASSOCIATION_COPY_NONATOMIC);
-    if (@available(macOS 11.3, *)) {
+    if (@available(iOS 14.5, macOS 11.3, *)) {
         task.prefersIncrementalDelivery = NO;
     }
     [task resume];

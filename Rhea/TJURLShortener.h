@@ -1,5 +1,5 @@
 //
-//  RHEABitlyClient.h
+//  TJURLShortener.h
 //  Rhea
 //
 //  Created by Tim Johnsen on 4/8/18.
@@ -10,9 +10,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface RHEABitlyClient : NSObject
+__attribute__((objc_direct_members))
+@interface TJURLShortener : NSObject
+
++ (void)configureWithKey:(NSString *const)key host:(NSString *const)host userDefaults:(NSUserDefaults *const)userDefaults;
 
 // Shortening
++ (NSURL *)expectedShortURLFor:(NSURL *const)url;
+
 + (void)shortenURL:(NSURL *const)url
         completion:(void (^)(NSURL *_Nullable shortenedURL, BOOL shortened))completion;
 
