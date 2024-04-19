@@ -638,7 +638,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         NSString *key = NSStringFromClass([self class]);
         [TJURLShortener configureWithKey:[@"DifIgFy7l74GJxP21Wu9Z2HaqMI4HOrXz1UThfXhSM7BLNa5ieA9VrVwhmaFJno2kOQyFhPNJTPdlbM/EmQ0f8f14ADUSzOIYwkY/tccTC8qr+Gui0TFZy3LgEU6TybD+EphGc1oANNEbW0An1FbFQ==" decryptedStringWithKey:key]
                                     host:[@"bPiyqtOHN/vHAN742JBPvuIMvjn0qji9irQCKRyyIBGfrvWrNmXP0IgYAjl63/Kr3tE9t9jq4MnoPPGvXg9kwg==" decryptedStringWithKey:key]
-                            userDefaults:[NSUserDefaults standardUserDefaults]];
+               sharedContainerIdentifier:nil];
     });
     [TJURLShortener shortenURL:url
                     completion:^(NSURL * _Nullable shortenedURL, BOOL shortened) {

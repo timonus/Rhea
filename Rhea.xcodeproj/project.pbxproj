@@ -41,8 +41,8 @@
 		2261D4AB1D7219B300E6ECDD /* RHEAMenuItem.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAMenuItem.m; sourceTree = "<group>"; };
 		227C14D71D55B4D60043EABC /* RHEAEntityResolver.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RHEAEntityResolver.h; sourceTree = "<group>"; };
 		227C14D81D55B4D60043EABC /* RHEAEntityResolver.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RHEAEntityResolver.m; sourceTree = "<group>"; };
-		22B48CB8207A942C00C5BFA9 /* TJURLShortener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TJURLShortener.h; sourceTree = "<group>"; };
-		22B48CB9207A942C00C5BFA9 /* TJURLShortener.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TJURLShortener.m; sourceTree = "<group>"; };
+		22B48CB8207A942C00C5BFA9 /* TJURLShortener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = TJURLShortener.h; path = ../Vendor/TJURLShortener/TJURLShortener.h; sourceTree = "<group>"; };
+		22B48CB9207A942C00C5BFA9 /* TJURLShortener.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = TJURLShortener.m; path = ../Vendor/TJURLShortener/TJURLShortener.m; sourceTree = "<group>"; };
 		22DE17B81D721B1D003DC15C /* NSURL+Rhea.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "NSURL+Rhea.h"; sourceTree = "<group>"; };
 		22DE17B91D721B1D003DC15C /* NSURL+Rhea.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "NSURL+Rhea.m"; sourceTree = "<group>"; };
 		22E2184D1DAAF84B00CD0EBE /* Rhea.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Rhea.entitlements; sourceTree = "<group>"; };

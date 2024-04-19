@@ -4,3 +4,6 @@
 [submodule "Vendor/SAMKeychain"]
 	path = Vendor/SAMKeychain
 	url = https://github.com/timonus/samkeychain
+[submodule "Vendor/TJURLShortener"]
+	path = Vendor/TJURLShortener
+	url = git@github.com:timonus/TJURLShortener.git
