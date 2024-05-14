@@ -88,6 +88,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }];
     [self updateCurrentDropboxAccountInformation];
     
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        NSString *key = NSStringFromClass([self class]);
+        [TJURLShortener configureWithKey:[@"DifIgFy7l74GJxP21Wu9Z2HaqMI4HOrXz1UThfXhSM7BLNa5ieA9VrVwhmaFJno2kOQyFhPNJTPdlbM/EmQ0f8f14ADUSzOIYwkY/tccTC8qr+Gui0TFZy3LgEU6TybD+EphGc1oANNEbW0An1FbFQ==" decryptedStringWithKey:key]
+                                    host:[@"bPiyqtOHN/vHAN742JBPvuIMvjn0qji9irQCKRyyIBGfrvWrNmXP0IgYAjl63/Kr3tE9t9jq4MnoPPGvXg9kwg==" decryptedStringWithKey:key]
+               sharedContainerIdentifier:nil];
+    });
+    
     // Looks janky, but this touches the keychain entries we'll need to access prior to the menu being clicked.
     // If we attempt to access the keychain while the mouse click for the menu's being handled, the permission dialog that pops up won't receive any keyboard events. Which is bad.
     [self menuWillOpen:[NSMenu new]];
@@ -649,13 +657,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             [alert runModal];
         }
     };
-    static dispatch_once_t onceToken;
-    dispatch_once(&onceToken, ^{
-        NSString *key = NSStringFromClass([self class]);
-        [TJURLShortener configureWithKey:[@"DifIgFy7l74GJxP21Wu9Z2HaqMI4HOrXz1UThfXhSM7BLNa5ieA9VrVwhmaFJno2kOQyFhPNJTPdlbM/EmQ0f8f14ADUSzOIYwkY/tccTC8qr+Gui0TFZy3LgEU6TybD+EphGc1oANNEbW0An1FbFQ==" decryptedStringWithKey:key]
-                                    host:[@"bPiyqtOHN/vHAN742JBPvuIMvjn0qji9irQCKRyyIBGfrvWrNmXP0IgYAjl63/Kr3tE9t9jq4MnoPPGvXg9kwg==" decryptedStringWithKey:key]
-               sharedContainerIdentifier:nil];
-    });
     [TJURLShortener shortenURL:url
                     completion:^(NSURL * _Nullable shortenedURL, BOOL shortened) {
         dispatch_async(dispatch_get_main_queue(), ^{
