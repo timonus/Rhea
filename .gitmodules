@@ -7,3 +7,6 @@
 [submodule "Vendor/TJURLShortener"]
 	path = Vendor/TJURLShortener
 	url = git@github.com:timonus/TJURLShortener.git
+[submodule "Vendor/Brotli"]
+	path = Vendor/Brotli
+	url = git@github.com:timonus/Brotli.git
