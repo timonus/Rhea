@@ -358,7 +358,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             operation = NSDragOperationLink;
         }
     } else if ([resolvedEntity isKindOfClass:[NSString class]]) {
-        operation = NSDragOperationCopy;
+        NSString *const extension = [resolvedEntity pathExtension];
+        // https://superuser.com/a/298731 text files can be uploaded using TJURLShortener
+        if (([NSEvent modifierFlags] & NSEventModifierFlagOption) &&
+            extension &&
+            UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)extension, kUTTypeText) != nil) {
+            operation = NSDragOperationLink;
+        } else {
+            operation = NSDragOperationCopy;
+        }
     }
     
     return operation;
@@ -384,7 +392,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // 2. Upload local file or shorten link
     if (!didHandle) {
         if ([resolvedEntity isKindOfClass:[NSString class]]) {
-            [self uploadFileAtPath:resolvedEntity];
+            NSString *const extension = [resolvedEntity pathExtension];
+            // https://superuser.com/a/298731 text files can be uploaded using TJURLShortener
+            if (([NSEvent modifierFlags] & NSEventModifierFlagOption) &&
+                extension &&
+                UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)extension, kUTTypeText) != nil) {
+                // BLERB
+            } else {
+                [self uploadFileAtPath:resolvedEntity];
+            }
             didHandle = YES;
         } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
             [self shortenURL:resolvedEntity];
