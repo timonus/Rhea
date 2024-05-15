@@ -187,12 +187,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }
     [menu addItem:recentsItem];
     id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+    NSString *const string = [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString];
     if ([resolvedEntity isKindOfClass:[NSString class]]) {
         if (currentDropboxAccount) {
             [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
         }
     } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
         [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
+    } else if ([string length] > 0) {
+        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Copy link to copied text" action:@selector(textMenuItemClicked:) keyEquivalent:@""]];
     }
     [menu addItem:[NSMenuItem separatorItem]];
     
@@ -278,6 +281,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     if ([resolvedEntity isKindOfClass:[NSURL class]]) {
         [self shortenURL:resolvedEntity];
     }
+}
+
+- (void)textMenuItemClicked:(id)sender
+{
+    NSString *const string = [[NSPasteboard generalPasteboard] stringForType:NSStringPboardType];
+    [self shortenText:string];
 }
 
 #pragma mark - Notifications
@@ -406,35 +415,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 extension &&
                 UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)extension, kUTTypeText) != nil) {
                 NSString *const text = [[NSString alloc] initWithContentsOfFile:resolvedEntity encoding:NSUTF8StringEncoding error:nil];
-                [TJURLShortener shortenText:text completion:^(NSURL * _Nullable longURL, NSURL * _Nullable shortenedURL, BOOL shortened) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        NSURL *url = shortenedURL ?: longURL;
-                        if (url) {
-                            [self copyStringToPasteboard:url.absoluteString];
-                            
-                            NSUserNotification *const notification = [NSUserNotification new];
-                            notification.identifier = url.absoluteString;
-                            if (shortened && shortenedURL != nil) {
-                                notification.title = @"Link saved";
-                            } else {
-                                notification.title = @"Copied link";
-                            }
-                            notification.subtitle = text;
-                            notification.informativeText = [url trimmedUserFacingString];
-                            notification.hasActionButton = YES;
-                            notification.actionButtonTitle = @"View";
-                            notification.userInfo = @{kRHEANotificationURLStringKey: url.absoluteString};
-                            [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
-                            
-                            [self addRecentActionWithTitle:text url:url];
-                        } else {
-                            NSAlert *const alert = [NSAlert new];
-                            alert.messageText = @"Couldn't create text link";
-                            alert.informativeText = text;
-                            [alert runModal];
-                        }
-                    });
-                }];
+                [self shortenText:text];
             } else {
                 [self uploadFileAtPath:resolvedEntity];
             }
@@ -690,6 +671,39 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                     completion:^(NSURL * _Nullable shortenedURL, BOOL shortened) {
         dispatch_async(dispatch_get_main_queue(), ^{
             completion(shortenedURL, shortened);
+        });
+    }];
+}
+    
+- (void)shortenText:(NSString *const)text
+{
+    [TJURLShortener shortenText:text completion:^(NSURL * _Nullable longURL, NSURL * _Nullable shortenedURL, BOOL shortened) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSURL *url = shortenedURL ?: longURL;
+            if (url) {
+                [self copyStringToPasteboard:url.absoluteString];
+                
+                NSUserNotification *const notification = [NSUserNotification new];
+                notification.identifier = url.absoluteString;
+                if (shortened && shortenedURL != nil) {
+                    notification.title = @"Link saved";
+                } else {
+                    notification.title = @"Copied link";
+                }
+                notification.subtitle = text;
+                notification.informativeText = [url trimmedUserFacingString];
+                notification.hasActionButton = YES;
+                notification.actionButtonTitle = @"View";
+                notification.userInfo = @{kRHEANotificationURLStringKey: url.absoluteString};
+                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+                
+                [self addRecentActionWithTitle:text url:url];
+            } else {
+                NSAlert *const alert = [NSAlert new];
+                alert.messageText = @"Couldn't create text link";
+                alert.informativeText = text;
+                [alert runModal];
+            }
         });
     }];
 }
