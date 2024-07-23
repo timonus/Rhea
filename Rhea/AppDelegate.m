@@ -542,7 +542,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             notificationBlock(YES);
         }
     };
-    if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://goo.gl/MkYMSc
+    if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://tijo.link/mQ2tVC
         [TJDropbox uploadLargeFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES credential:[self dropboxCredential] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
