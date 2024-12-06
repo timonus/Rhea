@@ -289,7 +289,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 {
     // http://stackoverflow.com/questions/381021/launch-safari-from-a-mac-application
     // TODO: Open in new tab.
-    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/recents"]];
+    [[NSWorkspace sharedWorkspace] openURL:[NSURL URLWithString:@"https://www.dropbox.com/home/Apps/Rhea"]];
 }
 
 - (void)recentMenuItemClicked:(id)sender
