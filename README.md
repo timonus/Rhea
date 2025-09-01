@@ -2,7 +2,7 @@
 
 [![](https://dl.dropboxusercontent.com/s/ic4r48xv2ru5r3l/4ba5c0bcdbdf7d79eb87a72f42f16f72-12wH.jpg?dl=0)](https://en.wikipedia.org/wiki/Rhea_(moon))
 
-Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to [CloudApp](https://www.getcloudapp.com/) and [Dropshare](https://dropshare.app). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and [Bitly](https://dev.bitly.com) for shortening links.
+Rhea is a status bar utility for the Mac that allows you to quickly and easily upload files and shorten links, similar to CloudApp (RIP) and [Dropshare](https://dropshare.app). It uses [Dropbox](https://www.dropbox.com/developers) (powered by [TJDropbox](https://github.com/timonus/TJDropbox)) for file storage and a custom URL shortening service for shortening links.
 
 ## File Upload
 
@@ -17,7 +17,6 @@ Or, if you have a file path or file URL copied to your clipboard you can upload 
 Dropbox links are copied to the clipboard while files are being uploaded in the background, so it’s very quick.
 
 ### Technical Notes
-- The API one uses to copy a link while an upload is occurring is deprecated by Dropbox. May have to move to another endpoint at some point.
 - A 4-character base 62 suffix is appended to all uploaded files to avoid filename conflicts. This suffix is consistent for a given file's contents, so repeat uploads of the same file with the same filename act as no-ops.
 - It is recommended that you use Dropbox’s [selective sync](https://www.dropbox.com/en/help/175) feature to disable the Rhea directory from being synched to your Mac.
 
@@ -33,7 +32,7 @@ Or, if you have a URL copied to your clipboard you can shorten it via Rhea’s d
 
 ## Development
 
-- Rhea is open source, however the Dropbox and Bitly API keys needed for it to run aren’t present in the open source repo. In order to develop Rhea you’ll need to provide these keys by doing the following:
+- Rhea is open source, however the Dropbox key and URL shortening service needed for it to run aren’t present in the open source repo. In order to develop Rhea you’ll need to provide these by doing the following:
 	- Fill in `_dropboxAppKey` and add a URL scheme with the format `db-yourDropboxAppKey` to your info.plist's entry for `CFBundleURLTypes` for Dropbox auth.
-	- Fill in `_bitlyClientIdentifier`, `_bitlyClientSecret`, and add `rhea-bitly-auth://bitlyauth` as a whitelisted redirect URI in your Bitly app's OAuth app settings for Bitly auth.
+	- Stub out use of `TJURLShortener`, a private repo.
 - Rhea uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules), so run `git submodule update --init` when cloning.
