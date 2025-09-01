@@ -14,7 +14,9 @@
 {
     id result = nil;
     if ([entity isKindOfClass:[NSString class]]) {
-        NSURL *const url = [NSURL URLWithString:[(NSString *)entity stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        NSURLComponents *const components = [[NSURLComponents alloc] initWithString:[(NSString *)entity stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]];
+        components.fragment = [components.fragment stringByRemovingPercentEncoding]; // Fix strings with text highlights like https://objectionable-c.com/posts/shrink-static-files/#:~:text=What’s%20fun%20about%20these%20scripts%20is (these get double-encoded somehow)
+        NSURL *const url = components.URL;
         if (url.scheme.length > 0) { // -URLWithString: parses file paths successfully, check the scheme to ensure it's not just a path.
             result = [self resolveURL:url];
         } else {

@@ -10,7 +10,7 @@
 
 #import "RHEAMenuItem.h"
 #import "RHEAEntityResolver.h"
-#import "RHEABitlyClient.h"
+#import "TJURLShortener.h"
 #import "TJDropbox.h"
 #import "SAMKeychain.h"
 #import "NSURL+Rhea.h"
@@ -26,9 +26,6 @@
 
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
-
-static NSString *const kRHEABitlyAccountKey = @"com.tijo.Rhea.Service.Bitly";
-static NSString *const kRHEABitlyRedirectURLString = @"rhea-bitly-auth://bitlyauth";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -60,7 +57,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
     self.statusItem.button.image = [NSImage imageNamed:@"StatusBarButtonImage"];
     
-    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSURLPboardType, NSStringPboardType]];
+    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSPasteboardTypeURL, NSPasteboardTypeString]];
     self.statusItem.button.window.delegate = self;
     
     NSMenu *const menu = [NSMenu new];
@@ -118,8 +115,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
         }
     }
-    NSString *const bitlyCode = [RHEABitlyClient accessCodeFromURL:url redirectURL:[NSURL URLWithString:@"rhea-bitly-auth://bitlyauth"]];
-    
     if (dropboxCode) {
         [TJDropbox credentialFromCode:dropboxCode
                   withClientIdentifier:[[self class] _dropboxAppKey]
@@ -152,25 +147,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             }
         }];
         self.codeVerifier = nil;
-    } else if (bitlyCode) {
-        [RHEABitlyClient authenticateWithCode:bitlyCode
-                             clientIdentifier:[[self class] _bitlyClientIdentifier]
-                                 clientSecret:[[self class] _bitlyClientSecret]
-                                  redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]
-                                   completion:^(NSString *accessToken, NSString *groupIdentifier) {
-                                       NSString *message = nil;
-                                       if (accessToken && groupIdentifier) {
-                                           message = @"Logged in to Bitly!";
-                                           [SAMKeychain setPassword:[NSString stringWithFormat:@"%@ %@", groupIdentifier, accessToken] forService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-                                       } else {
-                                           message = @"Unable to log into Bitly";
-                                       }
-                                       dispatch_async(dispatch_get_main_queue(), ^{
-                                           NSAlert *const alert = [NSAlert new];
-                                           alert.messageText = message;
-                                           [alert runModal];
-                                       });
-                                   }];
     }
 }
 
@@ -195,20 +171,37 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         }
     }
     NSString *const currentDropboxAccount = [self currentDropboxAccount];
-    const BOOL signedInToBitly = ([SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey] != nil);
     if (currentDropboxAccount) {
         [recentsMenu addItem:[NSMenuItem separatorItem]];
         [recentsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"View more on Dropbox" action:@selector(recentsMenuItemClicked:) keyEquivalent:@""]];
     }
     [menu addItem:recentsItem];
-    id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
-    if ([resolvedEntity isKindOfClass:[NSString class]]) {
-        if (currentDropboxAccount) {
-            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
+    
+    BOOL addedPasteItem = NO;
+    
+    if (@available(macOS 15.4, *)) {
+        if ([[NSPasteboard generalPasteboard] accessBehavior] != NSPasteboardAccessBehaviorAlwaysAllow) {
+            
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Copy link to clipboard" action:@selector(genericMenuItemClicked:) keyEquivalent:@""]];
+            
+            addedPasteItem = YES;
         }
-    } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
-        [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
     }
+    
+    if (!addedPasteItem) {
+        id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+        NSString *const string = [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString];
+        if ([resolvedEntity isKindOfClass:[NSString class]]) {
+            if (currentDropboxAccount) {
+                [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Upload copied file" action:@selector(uploadPasteboardMenuItemClicked:) keyEquivalent:@""]];
+            }
+        } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Shorten copied link" action:@selector(shortenPasteboardMenuItemClicked:) keyEquivalent:@""]];
+        } else if ([string length] > 0) {
+            [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Copy link to copied text" action:@selector(textMenuItemClicked:) keyEquivalent:@""]];
+        }
+    }
+    
     [menu addItem:[NSMenuItem separatorItem]];
     
     
@@ -224,7 +217,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             NSString *const email = [account objectForKey:kSAMKeychainAccountKey];
             NSMenuItem *const menuItem = [[NSMenuItem alloc] initWithTitle:email action:@selector(accountMenuItemSelected:) keyEquivalent:@""];
             if ([email isEqualToString:currentDropboxAccount]) {
-                menuItem.state = NSOnState;
+                menuItem.state = NSControlStateValueOn;
             }
             [accountsMenu addItem:menuItem];
         }
@@ -234,15 +227,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:[NSString stringWithFormat:@"Sign out %@", currentDropboxAccount] action:@selector(signOutCurrentDropboxAccountMenuItemClicked:) keyEquivalent:@""]];
     }
     [accountsMenu addItem:[NSMenuItem separatorItem]];
-    
-    titleMenuItem = [[NSMenuItem alloc] initWithTitle:@"Bitly Account" action:nil keyEquivalent:@""];
-    titleMenuItem.enabled = NO;
-    [accountsMenu addItem:titleMenuItem];
-    if (signedInToBitly) {
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign out" action:@selector(signOutBitlyAccountMenuItemClicked:) keyEquivalent:@""]];
-    } else {
-        [accountsMenu addItem:[[NSMenuItem alloc] initWithTitle:@"Sign in to Bitly" action:@selector(authenticateBitlyMenuItemClicked:) keyEquivalent:@""]];
-    }
     
     accountsItem.submenu = accountsMenu;
     [menu addItem:accountsItem];
@@ -259,11 +243,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     [[NSWorkspace sharedWorkspace] openURL:[TJDropbox tokenAuthenticationURLWithClientIdentifier:[[self class] _dropboxAppKey] redirectURL:nil codeVerifier:self.codeVerifier generateRefreshToken:YES]];
 }
 
-- (void)authenticateBitlyMenuItemClicked:(id)sender
-{
-    [[NSWorkspace sharedWorkspace] openURL:[RHEABitlyClient authenticationURLWithClientIdentifier:[[self class] _bitlyClientIdentifier] redirectURL:[NSURL URLWithString:kRHEABitlyRedirectURLString]]];
-}
-
 - (void)accountMenuItemSelected:(id)sender
 {
     [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxAccountKey];
@@ -278,11 +257,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     }];
     [SAMKeychain deletePasswordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
     [self updateCurrentDropboxAccountInformation];
-}
-
-- (void)signOutBitlyAccountMenuItemClicked:(id)sender
-{
-    [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
 }
 
 - (void)recentsMenuItemClicked:(id)sender
@@ -311,6 +285,32 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
     if ([resolvedEntity isKindOfClass:[NSURL class]]) {
         [self shortenURL:resolvedEntity];
+    }
+}
+
+- (void)textMenuItemClicked:(id)sender
+{
+    NSString *const string = [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString];
+    [self shortenText:string];
+}
+
+- (void)genericMenuItemClicked:(id)sender
+{
+    id resolvedEntity = [self resolvePasteboard:[NSPasteboard generalPasteboard]];
+    NSString *const string = [[NSPasteboard generalPasteboard] stringForType:NSPasteboardTypeString];
+    if ([resolvedEntity isKindOfClass:[NSString class]]) {
+        if ([self currentDropboxAccount]) {
+            [self uploadFileAtPath:resolvedEntity];
+        } else {
+            NSAlert *const alert = [NSAlert new];
+            alert.messageText = @"Dropbox sign in required";
+            alert.informativeText = @"You must be logged in to Dropbox to upload files";
+            [alert runModal];
+        }
+    } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
+        [self shortenURL:resolvedEntity];
+    } else if ([string length] > 0) {
+        [self shortenText:string];
     }
 }
 
@@ -362,24 +362,15 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     id resolvedEntity = nil;
     
     NSArray *const paths = [pasteboard propertyListForType:NSFilenamesPboardType];
-    NSArray *const urls = [pasteboard propertyListForType:NSURLPboardType];
-    NSString *const string = [pasteboard stringForType:NSStringPboardType];
+    id url = [pasteboard propertyListForType:NSPasteboardTypeURL];
+    NSString *const string = [pasteboard stringForType:NSPasteboardTypeString];
     
     if (paths.count > 0) {
         if (paths.count == 1) {
             resolvedEntity = [RHEAEntityResolver resolveEntity:[paths firstObject]];
         }
-    } else if (urls.count > 0) {
-        const id object = [urls firstObject];
-        NSURL *url = nil;
-        if ([object isKindOfClass:[NSURL class]]) {
-            url = object;
-        } else if ([object isKindOfClass:[NSString class]]) {
-            url = [NSURL URLWithString:object];
-        }
-        if (url) {
-            resolvedEntity = [RHEAEntityResolver resolveEntity:url];
-        }
+    } else if (url) {
+        resolvedEntity = [RHEAEntityResolver resolveEntity:url];
     } else if (string) {
         resolvedEntity = [RHEAEntityResolver resolveEntity:string];
     }
@@ -400,7 +391,13 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             operation = NSDragOperationLink;
         }
     } else if ([resolvedEntity isKindOfClass:[NSString class]]) {
-        operation = NSDragOperationCopy;
+        NSString *const extension = [resolvedEntity pathExtension];
+        // https://superuser.com/a/298731 text files can be uploaded using TJURLShortener
+        if (([NSEvent modifierFlags] & NSEventModifierFlagOption) && _isFileExtensionForTextFile(extension)) {
+            operation = NSDragOperationLink;
+        } else {
+            operation = NSDragOperationCopy;
+        }
     }
     
     return operation;
@@ -409,6 +406,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 - (NSDragOperation)draggingUpdated:(id <NSDraggingInfo>)sender
 {
     return [self draggingEntered:sender];
+}
+
+static BOOL _isFileExtensionForTextFile(NSString *const extension) {
+    if (extension != nil) {
+        NSString *str = (__bridge_transfer NSString *)UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (__bridge CFStringRef)extension, kUTTypeText);
+        return str != nil;
+    }
+    return NO;
 }
 
 - (BOOL)performDragOperation:(id<NSDraggingInfo>)sender
@@ -426,7 +431,14 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // 2. Upload local file or shorten link
     if (!didHandle) {
         if ([resolvedEntity isKindOfClass:[NSString class]]) {
-            [self uploadFileAtPath:resolvedEntity];
+            NSString *const extension = [resolvedEntity pathExtension];
+            // https://superuser.com/a/298731 text files can be uploaded using TJURLShortener
+            if (([NSEvent modifierFlags] & NSEventModifierFlagOption) && _isFileExtensionForTextFile(extension)) {
+                NSString *const text = [[NSString alloc] initWithContentsOfFile:resolvedEntity encoding:NSUTF8StringEncoding error:nil];
+                [self shortenText:text];
+            } else {
+                [self uploadFileAtPath:resolvedEntity];
+            }
             didHandle = YES;
         } else if ([resolvedEntity isKindOfClass:[NSURL class]]) {
             [self shortenURL:resolvedEntity];
@@ -491,30 +503,58 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                                                      clientIdentifier:[[self class] _dropboxAppKey]];
 }
 
+NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
+    const size_t bufferSize = 10 * 1024 * 1024; // 10MB buffer
+
+    NSFileHandle *fileHandle = [NSFileHandle fileHandleForReadingFromURL:fileURL error:error];
+    if (!fileHandle) {
+        return nil;
+    }
+
+    CC_SHA256_CTX hashContext;
+    CC_SHA224_Init(&hashContext);
+
+    while (true) {
+        @autoreleasepool {
+            NSData *data = [fileHandle readDataOfLength:bufferSize];
+            if (data.length == 0) {
+                break; // EOF
+            }
+            CC_SHA224_Update(&hashContext, data.bytes, (CC_LONG)data.length);
+        }
+    }
+
+    [fileHandle closeFile];
+
+    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
+    CC_SHA256_Final(digest, &hashContext);
+    
+    return [NSData dataWithBytes:digest length:CC_SHA224_DIGEST_LENGTH];
+}
+
 - (void)uploadFileAtPath:(NSString *const)path
 {
     NSURL *const fileURL = [NSURL fileURLWithPath:path isDirectory:NO];
     NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [fileURL pathExtension];
     
+    NSData *const hashData = SHA224HashOfFileAtURL(fileURL, nil);
+    
+    if (hashData == nil) {
+        // TODO: Error
+        return;
+    }
+    
     // Append first 4 non-special characters of the base 64 SHA224 hash of the file contents to it.
     // Better than random because repeated uploads won't be stored multiple times.
-    unsigned char result[CC_SHA224_DIGEST_LENGTH];
-    NSData *const data = [NSData dataWithContentsOfFile:path];
-    CC_SHA224(data.bytes, (CC_LONG)data.length, result);
-    NSString *suffix = [[NSData dataWithBytes:result length:CC_SHA224_DIGEST_LENGTH] base64EncodedStringWithOptions:0];
-    suffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
-    suffix = [suffix substringToIndex:MIN(4, suffix.length)];
+    NSString *suffix = [hashData base64EncodedStringWithOptions:0];
+    NSString *const fullSuffix = [suffix stringByReplacingOccurrencesOfString:@"/|\\+|=" withString:@"" options:NSRegularExpressionSearch range:NSMakeRange(0, suffix.length)];
+    suffix = [fullSuffix substringToIndex:MIN(4, suffix.length)];
     
     __block NSString *fetchedURLString = nil;
-    void (^notificationBlock)(BOOL uploaded) = ^(BOOL uploaded) {
+    void (^notificationBlock)(NSString *title) = ^(NSString *title) {
         NSUserNotification *const notification = [NSUserNotification new];
-        notification.title = @"Copied file link";
-        if (uploaded) {
-            notification.title = @"File uploaded";
-        } else {
-            notification.title = @"Copied file link";
-        }
+        notification.title = title;
         notification.subtitle = filename;
         notification.informativeText = [[NSURL URLWithString:fetchedURLString] trimmedUserFacingString];
         notification.identifier = suffix;
@@ -531,6 +571,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     NSString *const remoteFilename = [NSString stringWithFormat:@"%@-%@%@", filename, suffix, extension.length > 0 ? [NSString stringWithFormat:@".%@", extension] : @""];
     NSString *const remotePath = [NSString stringWithFormat:@"/%@", remoteFilename];
+    NSString *const shortURLHashSeed = [remoteFilename stringByAppendingFormat:@" %@", fullSuffix];
     
     // Begin uploading the file
     unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil][NSFileSize] unsignedLongLongValue];
@@ -539,7 +580,40 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         if (error) {
             [self handleDropboxError:error message:@"Couldn't upload file"];
         } else {
-            notificationBlock(YES);
+            notificationBlock(@"File uploaded");
+            
+            // Copy a short link
+            [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:NO credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    if (urlString) {
+                        [TJURLShortener shortenURL:[NSURL URLWithString:urlString]
+                                          hashSeed:shortURLHashSeed
+                                        completion:^(NSURL * _Nullable shortenedURL, BOOL shortened) {
+                            if (!shortened) {
+                                return;
+                            }
+                            if (shortenedURL) {
+                                NSString *const urlString = shortenedURL.absoluteString;
+                                [self copyStringToPasteboard:urlString];
+                                notificationBlock(@"Link shortened");
+                                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:shortenedURL];
+                            } else {
+                                dispatch_async(dispatch_get_main_queue(), ^{
+                                    NSAlert *const alert = [NSAlert new];
+                                    alert.messageText = @"Couldn't shorten link";
+                                    alert.informativeText = path;
+                                    [alert runModal];
+                                });
+                            }
+                        }];
+                    } else {
+                        NSAlert *const alert = [NSAlert new];
+                        alert.messageText = @"Couldn't generate Dropbox link";
+                        alert.informativeText = path;
+                        [alert runModal];
+                    }
+                });
+            }];
         }
     };
     if (fileSize > 150 * 1024 * 1024) { // The docs state that no request should be larger than 150MB https://tijo.link/mQ2tVC
@@ -552,22 +626,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         } completion:completionBlock];
     }
     
-    // Copy a short link
-    [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:YES credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            if (urlString) {
-                fetchedURLString = urlString;
-                [self copyStringToPasteboard:urlString];
-                notificationBlock(NO);
-                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
-            } else {
-                NSAlert *const alert = [NSAlert new];
-                alert.messageText = @"Couldn't copy link";
-                alert.informativeText = path;
-                [alert runModal];
-            }
-        });
-    }];
+    // Little white lie while still uploading.
+    NSURL *const expectedShortURL = [TJURLShortener expectedShortURLForURL:nil hashSeed:shortURLHashSeed];
+    fetchedURLString = expectedShortURL.absoluteString;
+    [self copyStringToPasteboard:fetchedURLString];
+    notificationBlock(@"Copied file link");
+    [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:expectedShortURL];
 }
 
 - (void)saveFileAtURL:(NSURL *const)url
@@ -610,7 +674,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
                 notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 
-                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString]];
+                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:[NSURL URLWithString:urlString]];
             } else {
                 NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't copy link";
@@ -649,12 +713,17 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 - (void)shortenURL:(NSURL *const)url
 {
-    void (^completion)(NSURL *shortenedURL) = ^(NSURL *shortenedURL) {
+    void (^completion)(NSURL *shortenedURL, BOOL shortened) = ^(NSURL *shortenedURL, BOOL shortened) {
         if (shortenedURL) {
             [self copyStringToPasteboard:shortenedURL.absoluteString];
             
             NSUserNotification *const notification = [NSUserNotification new];
-            notification.title = @"Link shortened";
+            notification.identifier = url.absoluteString;
+            if (shortened) {
+                notification.title = @"Link shortened";
+            } else {
+                notification.title = @"Copied link";
+            }
             notification.subtitle = url.absoluteString;
             notification.informativeText = [shortenedURL trimmedUserFacingString];
             notification.hasActionButton = YES;
@@ -670,30 +739,45 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
             [alert runModal];
         }
     };
-    NSString *const credentials = [SAMKeychain passwordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-    NSArray<NSString *> *const components = [credentials componentsSeparatedByString:@" "];
-    if (components.count == 2) {
-        NSString *const groupIdentifier = components.firstObject;
-        NSString *const accessToken = components.lastObject;
-        [RHEABitlyClient shortenURL:url
-                    groupIdentifier:groupIdentifier
-                        accessToken:accessToken
-                         completion:completion];
-    } else {
-        if (credentials) {
-            [SAMKeychain deletePasswordForService:kRHEABitlyAccountKey account:kRHEABitlyAccountKey];
-        }
-        NSAlert *const alert = [NSAlert new];
-        alert.messageText = @"Bitly account needed";
-        alert.informativeText = @"You must log in to a Bitly account to shorten links.";
-        NSString *const logInButtonTitle = @"Log in to Bitly";
-        [alert addButtonWithTitle:logInButtonTitle];
-        [alert addButtonWithTitle:@"Dismiss"];
-        const NSModalResponse response = [alert runModal];
-        if (response == NSAlertFirstButtonReturn) {
-            [self authenticateBitlyMenuItemClicked:nil];
-        }
-    }
+    [TJURLShortener shortenURL:url
+                    completion:^(NSURL * _Nullable shortenedURL, BOOL shortened) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            completion(shortenedURL, shortened);
+        });
+    }];
+}
+    
+- (void)shortenText:(NSString *const)text
+{
+    [TJURLShortener shortenText:text completion:^(NSURL * _Nullable longURL, NSURL * _Nullable shortenedURL, BOOL shortened) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            NSURL *url = shortenedURL ?: longURL;
+            if (url) {
+                [self copyStringToPasteboard:url.absoluteString];
+                
+                NSUserNotification *const notification = [NSUserNotification new];
+                notification.identifier = longURL.absoluteString;
+                if (shortened && shortenedURL != nil) {
+                    notification.title = @"Link saved";
+                } else {
+                    notification.title = @"Copied link";
+                }
+                notification.subtitle = text;
+                notification.informativeText = [url trimmedUserFacingString];
+                notification.hasActionButton = YES;
+                notification.actionButtonTitle = @"View";
+                notification.userInfo = @{kRHEANotificationURLStringKey: url.absoluteString};
+                [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
+                
+                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📝 %@", text] url:url];
+            } else {
+                NSAlert *const alert = [NSAlert new];
+                alert.messageText = @"Couldn't create text link";
+                alert.informativeText = text;
+                [alert runModal];
+            }
+        });
+    }];
 }
 
 #pragma mark - Recents
@@ -762,18 +846,6 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 #pragma mark - Keys
 
 + (NSString *)_dropboxAppKey
-{
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
-}
-
-+ (NSString *)_bitlyClientIdentifier
-{
-    NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
-    return @"";
-}
-
-+ (NSString *)_bitlyClientSecret
 {
     NSAssert(NO, @"%s must be filled in", __PRETTY_FUNCTION__);
     return @"";
