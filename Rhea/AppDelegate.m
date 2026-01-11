@@ -629,7 +629,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
             notificationBlock(@"File uploaded");
             
             // Copy a short link
-            [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDefault uploadOrSaveInProgress:NO credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
+            [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDirect uploadOrSaveInProgress:NO credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (urlString) {
                         [TJURLShortener shortenURL:[NSURL URLWithString:urlString]
