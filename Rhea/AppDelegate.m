@@ -30,6 +30,7 @@ static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
 static NSString *const kRHEARecentActionTitleKey = @"title";
+static NSString *const kRHEARecentActionSymbolNameKey = @"symbol";
 static NSString *const kRHEARecentActionURLKey = @"url";
 static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
@@ -167,6 +168,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
         for (NSDictionary *recentAction in self.recentActions) {
             RHEAMenuItem *recentMenuItem = [[RHEAMenuItem alloc] initWithTitle:recentAction[kRHEARecentActionTitleKey] action:@selector(recentMenuItemClicked:) keyEquivalent:@""];
             recentMenuItem.context = recentAction;
+            if (@available(macOS 26.0, *)) {
+                NSString *imageName = recentAction[kRHEARecentActionSymbolNameKey];
+                if (imageName) {
+                    recentMenuItem.image = [NSImage imageWithSystemSymbolName:imageName accessibilityDescription:nil];
+                }
+            }
             [recentsMenu addItem:recentMenuItem];
         }
     }
@@ -585,6 +592,36 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
     // Begin uploading the file
     unsigned long long fileSize = [[[NSFileManager defaultManager] attributesOfItemAtPath:path error:nil][NSFileSize] unsignedLongLongValue];
     
+    
+    NSString *symbolName;
+    if (@available(macOS 26.0, *)) {
+        NSString *uti = nil;
+        [fileURL getResourceValue:&uti
+                           forKey:NSURLTypeIdentifierKey
+                            error:nil];
+        
+        // https://chatgpt.com/share/6983a4a8-89a8-8008-b740-ab8cfbeb465c
+        if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeImage)) {
+            // Image
+            symbolName = @"photo";
+        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeMovie)) {
+            // Video
+            symbolName = @"video";
+        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeAudio)) {
+            // Audio
+            symbolName = @"headphones";
+        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeText)) {
+            // Text
+            symbolName = @"text.document";
+        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeArchive)) {
+            // Compressed / archive
+            symbolName = @"zipper.page";
+        } else {
+            // Fallback
+            symbolName = @"document";
+        }
+    }
+    
     void (^completionBlock)(NSDictionary *, NSError *) = ^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
         if (error) {
             [self handleDropboxError:error message:@"Couldn't upload file"];
@@ -605,7 +642,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
                                 NSString *const urlString = shortenedURL.absoluteString;
                                 [self copyStringToPasteboard:urlString];
                                 notificationBlock(@"Link shortened");
-                                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:shortenedURL];
+                                [self addRecentActionWithTitle:filename url:shortenedURL emoji:@"📄" symbolName:symbolName];
                             } else {
                                 dispatch_async(dispatch_get_main_queue(), ^{
                                     NSAlert *const alert = [NSAlert new];
@@ -640,7 +677,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
     fetchedURLString = expectedShortURL.absoluteString;
     [self copyStringToPasteboard:fetchedURLString];
     notificationBlock(@"Copied file link");
-    [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:expectedShortURL];
+    [self addRecentActionWithTitle:filename url:expectedShortURL emoji:@"📄" symbolName:symbolName];
 }
 
 - (void)saveFileAtURL:(NSURL *const)url
@@ -683,7 +720,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
                 notification.userInfo = @{kRHEANotificationURLStringKey: urlString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 
-                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📄 %@", filename] url:[NSURL URLWithString:urlString]];
+                [self addRecentActionWithTitle:filename url:[NSURL URLWithString:urlString] emoji:@"📄" symbolName:@"document.on.document"]; // TODO: Maybe use file extension to vary this icon
             } else {
                 NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't copy link";
@@ -740,7 +777,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
             notification.userInfo = @{kRHEANotificationURLStringKey: shortenedURL.absoluteString};
             [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
             
-            [self addRecentActionWithTitle:[NSString stringWithFormat:@"🔗 %@", [url trimmedUserFacingString]] url:shortenedURL];
+            [self addRecentActionWithTitle:[url trimmedUserFacingString] url:shortenedURL emoji:@"🔗" symbolName:@"link"];
         } else {
             NSAlert *const alert = [NSAlert new];
             alert.messageText = @"Couldn't shorten link";
@@ -778,7 +815,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
                 notification.userInfo = @{kRHEANotificationURLStringKey: url.absoluteString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 
-                [self addRecentActionWithTitle:[NSString stringWithFormat:@"📝 %@", text] url:url];
+                [self addRecentActionWithTitle:text url:url emoji:@"📝" symbolName:@"text.word.spacing"];
             } else {
                 NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't create text link";
@@ -791,7 +828,10 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
 
 #pragma mark - Recents
 
-- (void)addRecentActionWithTitle:(NSString *const)title url:(NSURL *)url
+- (void)addRecentActionWithTitle:(NSString *)title
+                             url:(NSURL *)url
+                           emoji:(NSString *)emoji
+                      symbolName:(NSString *)symbolName
 {
     // Don't add duplicates
     for (NSDictionary *const recentAction in self.recentActions) {
@@ -800,10 +840,19 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
         }
     }
     
-    NSDictionary *action = @{
-        kRHEARecentActionTitleKey: title,
-        kRHEARecentActionURLKey: url
-    };
+    if (@available(macOS 26.0, *)) {
+    } else {
+        title = [emoji stringByAppendingFormat:@" %@", title];
+    }
+    
+    NSMutableDictionary *action = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                                   title, kRHEARecentActionTitleKey,
+                                   url, kRHEARecentActionURLKey,
+                                   nil];
+    
+    if (symbolName) {
+        action[kRHEARecentActionSymbolNameKey] = symbolName;
+    }
     
     if (self.recentActions.count == 0) {
         [self.recentActions addObject:action];
