@@ -57,7 +57,7 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSSquareStatusItemLength];
     self.statusItem.button.image = [NSImage imageNamed:@"StatusBarButtonImage"];
     
-    [self.statusItem.button.window registerForDraggedTypes:@[NSFilenamesPboardType, NSPasteboardTypeURL, NSPasteboardTypeString]];
+    [self.statusItem.button.window registerForDraggedTypes:@[NSPasteboardTypeFileURL, NSPasteboardTypeURL, NSPasteboardTypeString]];
     self.statusItem.button.window.delegate = self;
     
     NSMenu *const menu = [NSMenu new];
@@ -361,7 +361,16 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     
     id resolvedEntity = nil;
     
-    NSArray *const paths = [pasteboard propertyListForType:NSFilenamesPboardType];
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSPasteboardItem *item in pasteboard.pasteboardItems) {
+        NSString *urlString = [item stringForType:NSPasteboardTypeFileURL];
+        if (urlString) {
+            NSURL *url = [NSURL URLWithString:urlString];
+            if (url.path) {
+                [paths addObject:url.path];
+            }
+        }
+    }
     id url = [pasteboard propertyListForType:NSPasteboardTypeURL];
     NSString *const string = [pasteboard stringForType:NSPasteboardTypeString];
     
