@@ -594,32 +594,37 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
     
     
     NSString *symbolName;
-    if (@available(macOS 26.0, *)) {
-        NSString *uti = nil;
-        [fileURL getResourceValue:&uti
-                           forKey:NSURLTypeIdentifierKey
-                            error:nil];
-        
-        // https://chatgpt.com/share/6983a4a8-89a8-8008-b740-ab8cfbeb465c
-        if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeImage)) {
-            // Image
-            symbolName = @"photo";
-        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeMovie)) {
-            // Video
-            symbolName = @"video";
-        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeAudio)) {
-            // Audio
-            symbolName = @"headphones";
-        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeText)) {
-            // Text
-            symbolName = @"text.document";
-        } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeArchive)) {
-            // Compressed / archive
-            symbolName = @"zipper.page";
-        } else {
-            // Fallback
-            symbolName = @"document";
-        }
+    TJDropboxSharedLinkType linkType;
+    NSString *uti = nil;
+    [fileURL getResourceValue:&uti
+                       forKey:NSURLTypeIdentifierKey
+                        error:nil];
+    
+    // https://chatgpt.com/share/6983a4a8-89a8-8008-b740-ab8cfbeb465c
+    if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeImage)) {
+        // Image
+        symbolName = @"photo";
+        linkType = TJDropboxSharedLinkTypeDirect;
+    } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeMovie)) {
+        // Video
+        symbolName = @"video";
+        linkType = TJDropboxSharedLinkTypeDirect;
+    } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeAudio)) {
+        linkType = TJDropboxSharedLinkTypeDirect;
+        // Audio
+        symbolName = @"headphones";
+    } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeText)) {
+        // Text
+        symbolName = @"text.document";
+        linkType = TJDropboxSharedLinkTypeDefault;
+    } else if (UTTypeConformsTo((__bridge CFStringRef)uti, kUTTypeArchive)) {
+        // Compressed / archive
+        symbolName = @"zipper.page";
+        linkType = TJDropboxSharedLinkTypeDefault;
+    } else {
+        // Fallback
+        symbolName = @"document";
+        linkType = TJDropboxSharedLinkTypeDefault;
     }
     
     void (^completionBlock)(NSDictionary *, NSError *) = ^(NSDictionary * _Nullable parsedResponse, NSError * _Nullable error) {
@@ -629,7 +634,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
             notificationBlock(@"File uploaded");
             
             // Copy a short link
-            [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:TJDropboxSharedLinkTypeDirect uploadOrSaveInProgress:NO credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
+            [TJDropbox getSharedLinkForFileAtPath:remotePath linkType:linkType uploadOrSaveInProgress:NO credential:[self dropboxCredential] completion:^(NSString * _Nullable urlString) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     if (urlString) {
                         [TJURLShortener shortenURL:[NSURL URLWithString:urlString]
