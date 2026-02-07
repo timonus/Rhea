@@ -10,3 +10,6 @@
 [submodule "Vendor/Brotli"]
 	path = Vendor/Brotli
 	url = git@github.com:timonus/Brotli.git
+[submodule "Vendor/appscripts"]
+	path = Vendor/appscripts
+	url = git@github.com:timonus/appscripts.git

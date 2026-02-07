@@ -400,6 +400,7 @@
 				222802B11D52D1C90059CEF7 /* Sources */,
 				222802B21D52D1C90059CEF7 /* Frameworks */,
 				222802B31D52D1C90059CEF7 /* Resources */,
+				22D2EC9F2F37993A006E75DA /* Minify */,
 			);
 			buildRules = (
 			);
@@ -460,6 +461,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		22D2EC9F2F37993A006E75DA /* Minify */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = Minify;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${CONFIGURATION}\" = \"Release\" ]; then\n\npython3 Vendor/appscripts/plist-minify.py\npython3 Vendor/appscripts/json-minify.py\n\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		222802B11D52D1C90059CEF7 /* Sources */ = {
