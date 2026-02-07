@@ -27,6 +27,7 @@
 
 static NSString *const kRHEADropboxAccountKey = @"com.tijo.Rhea.Service.Dropbox";
 static NSString *const kRHEACurrentDropboxAccountKey = @"currentDropboxAccount";
+static NSString *const kRHEAHasLaunchedBeforeKey = @"hasLaunchedBefore";
 
 static NSString *const kRHEANotificationURLStringKey = @"url";
 
@@ -92,6 +93,12 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     // If we attempt to access the keychain while the mouse click for the menu's being handled, the permission dialog that pops up won't receive any keyboard events. Which is bad.
     [self menuWillOpen:[NSMenu new]];
     
+    // Enable launch at login on first launch
+    if (![[NSUserDefaults standardUserDefaults] boolForKey:kRHEAHasLaunchedBeforeKey]) {
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:kRHEAHasLaunchedBeforeKey];
+        [self setLaunchAtLoginEnabled:YES];
+    }
+
 #ifndef NS_BLOCK_ASSERTIONS
     BOOL foundDropboxURL = NO;
     NSString *const dropboxURLString = [NSString stringWithFormat:@"db-%@", [[self class] _dropboxAppKey]];
