@@ -16,6 +16,7 @@
 #import "NSURL+Rhea.h"
 
 #import <CommonCrypto/CommonDigest.h>
+#import <ServiceManagement/ServiceManagement.h>
 
 // Building a status bar app: https://www.raywenderlich.com/98178/os-x-tutorial-menus-popovers-menu-bar-apps
 // Hiding the dock icon: http://stackoverflow.com/questions/620841/how-to-hide-the-dock-icon
@@ -238,7 +239,11 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
     accountsItem.submenu = accountsMenu;
     [menu addItem:accountsItem];
     [menu addItem:[NSMenuItem separatorItem]];
-    
+
+    NSMenuItem *launchAtLoginItem = [[NSMenuItem alloc] initWithTitle:@"Launch at Login" action:@selector(toggleLaunchAtLoginMenuItemClicked:) keyEquivalent:@""];
+    launchAtLoginItem.state = [self isLaunchAtLoginEnabled] ? NSControlStateValueOn : NSControlStateValueOff;
+    [menu addItem:launchAtLoginItem];
+
     [menu addItem:[[NSMenuItem alloc] initWithTitle:@"Quit" action:@selector(terminate:) keyEquivalent:@"q"]];
 }
 
@@ -904,6 +909,45 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
 {
     [[NSPasteboard generalPasteboard] clearContents];
     [[NSPasteboard generalPasteboard] writeObjects:@[string]];
+}
+
+#pragma mark - Launch at Login
+
+- (BOOL)isLaunchAtLoginEnabled
+{
+    if (@available(macOS 13.0, *)) {
+        SMAppService *service = [SMAppService mainAppService];
+        return service.status == SMAppServiceStatusEnabled;
+    }
+    return NO;
+}
+
+- (void)setLaunchAtLoginEnabled:(BOOL)enabled
+{
+    if (@available(macOS 13.0, *)) {
+        SMAppService *service = [SMAppService mainAppService];
+        NSError *error = nil;
+
+        if (enabled) {
+            [service registerAndReturnError:&error];
+        } else {
+            [service unregisterAndReturnError:&error];
+        }
+
+        if (error) {
+            NSLog(@"Failed to %@ launch at login: %@", enabled ? @"enable" : @"disable", error);
+            NSAlert *alert = [NSAlert new];
+            alert.messageText = [NSString stringWithFormat:@"Failed to %@ Launch at Login", enabled ? @"Enable" : @"Disable"];
+            alert.informativeText = error.localizedDescription;
+            [alert runModal];
+        }
+    }
+}
+
+- (void)toggleLaunchAtLoginMenuItemClicked:(id)sender
+{
+    BOOL currentlyEnabled = [self isLaunchAtLoginEnabled];
+    [self setLaunchAtLoginEnabled:!currentlyEnabled];
 }
 
 #pragma mark - Keys
