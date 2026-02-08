@@ -832,7 +832,11 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
                 notification.userInfo = @{kRHEANotificationURLStringKey: url.absoluteString};
                 [[NSUserNotificationCenter defaultUserNotificationCenter] scheduleNotification:notification];
                 
-                [self addRecentActionWithTitle:text url:url emoji:@"📝" symbolName:@"text.word.spacing"];
+                NSString *title = [[text componentsSeparatedByString:@"/n"] firstObject];
+                if ([title length] > 64) {
+                    title = [title substringToIndex:64];
+                }
+                [self addRecentActionWithTitle:title url:url emoji:@"📝" symbolName:@"text.word.spacing"];
             } else {
                 NSAlert *const alert = [NSAlert new];
                 alert.messageText = @"Couldn't create text link";
