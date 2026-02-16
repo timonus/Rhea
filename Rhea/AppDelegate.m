@@ -45,6 +45,9 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 
 @property (nonatomic, copy) NSString *codeVerifier;
 
+@property (nonatomic, copy, readonly) NSString *currentDropboxAccount;
+@property (nonatomic, readonly) TJDropboxCredential *dropboxCredential;
+
 @end
 
 @implementation AppDelegate
@@ -265,6 +268,8 @@ static const NSUInteger kRHEARecentActionsMaxCountKey = 10;
 - (void)accountMenuItemSelected:(id)sender
 {
     [[NSUserDefaults standardUserDefaults] setObject:[(NSMenuItem *)sender title] forKey:kRHEACurrentDropboxAccountKey];
+    _currentDropboxAccount = nil;
+    _dropboxCredential = nil;
     
     [self updateCurrentDropboxAccountInformation];
 }
@@ -479,8 +484,13 @@ static BOOL _isFileExtensionForTextFile(NSString *const extension) {
 
 #pragma mark - Dropbox
 
+@synthesize currentDropboxAccount = _currentDropboxAccount;
+
 - (NSString *)currentDropboxAccount
 {
+    if (_currentDropboxAccount) {
+        return _currentDropboxAccount;
+    }
     NSString *account = nil;
     for (NSDictionary *const keychainAccount in [SAMKeychain accountsForService:kRHEADropboxAccountKey]) {
         if ([[keychainAccount objectForKey:kSAMKeychainAccountKey] isEqualToString:[[NSUserDefaults standardUserDefaults] stringForKey:kRHEACurrentDropboxAccountKey]]) {
@@ -492,6 +502,7 @@ static BOOL _isFileExtensionForTextFile(NSString *const extension) {
     if (!account) {
         account = [[[SAMKeychain accountsForService:kRHEADropboxAccountKey] firstObject] objectForKey:kSAMKeychainAccountKey];
     }
+    _currentDropboxAccount = account;
     return account;
 }
 
@@ -524,11 +535,16 @@ static BOOL _isFileExtensionForTextFile(NSString *const extension) {
     
 }
 
+@synthesize dropboxCredential = _dropboxCredential;
+
 - (TJDropboxCredential *)dropboxCredential
 {
-    NSString *const stringValue = [SAMKeychain passwordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
-    return [[TJDropboxCredential alloc] initWithSerializedStringValue:stringValue
-                                                     clientIdentifier:[[self class] _dropboxAppKey]];
+    if (!_dropboxCredential) {
+        NSString *const stringValue = [SAMKeychain passwordForService:kRHEADropboxAccountKey account:[self currentDropboxAccount]];
+        _dropboxCredential = [[TJDropboxCredential alloc] initWithSerializedStringValue:stringValue
+                                                         clientIdentifier:[[self class] _dropboxAppKey]];
+    }
+    return _dropboxCredential;
 }
 
 NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
