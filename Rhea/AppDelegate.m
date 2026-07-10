@@ -547,42 +547,13 @@ static BOOL _isFileExtensionForTextFile(NSString *const extension) {
     return _dropboxCredential;
 }
 
-NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
-    const size_t bufferSize = 10 * 1024 * 1024; // 10MB buffer
-
-    NSFileHandle *fileHandle = [NSFileHandle fileHandleForReadingFromURL:fileURL error:error];
-    if (!fileHandle) {
-        return nil;
-    }
-
-    CC_SHA256_CTX hashContext;
-    CC_SHA224_Init(&hashContext);
-
-    while (true) {
-        @autoreleasepool {
-            NSData *data = [fileHandle readDataOfLength:bufferSize];
-            if (data.length == 0) {
-                break; // EOF
-            }
-            CC_SHA224_Update(&hashContext, data.bytes, (CC_LONG)data.length);
-        }
-    }
-
-    [fileHandle closeFile];
-
-    unsigned char digest[CC_SHA256_DIGEST_LENGTH];
-    CC_SHA256_Final(digest, &hashContext);
-    
-    return [NSData dataWithBytes:digest length:CC_SHA224_DIGEST_LENGTH];
-}
-
 - (void)uploadFileAtPath:(NSString *const)path
 {
     NSURL *const fileURL = [NSURL fileURLWithPath:path isDirectory:NO];
     NSString *const filename = [[fileURL URLByDeletingPathExtension] lastPathComponent];
     NSString *const extension = [fileURL pathExtension];
     
-    NSData *const hashData = SHA224HashOfFileAtURL(fileURL, nil);
+    NSData *const hashData = TJDropboxFileContentHash(fileURL.path);
     
     if (hashData == nil) {
         // TODO: Error
@@ -700,7 +671,7 @@ NSData *SHA224HashOfFileAtURL(NSURL *fileURL, NSError **error) {
             // TODO: Show progress.
         } completion:completionBlock];
     } else {
-        [TJDropbox uploadFileAtPath:path toPath:remotePath overwriteExisting:NO muteDesktopNotifications:YES credential:[self dropboxCredential] progressBlock:^(CGFloat progress) {
+        [TJDropbox uploadFileAtPath:path toPath:remotePath contentHash:hashData overwriteExisting:NO muteDesktopNotifications:YES credential:[self dropboxCredential] progressBlock:^(CGFloat progress) {
             // TODO: Show progress.
         } completion:completionBlock];
     }
